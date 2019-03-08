@@ -1,16 +1,19 @@
 package com.dblazejewski
 
-import akka.actor.{ ActorRef, ActorSystem }
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import com.dblazejewski.groups.{ GroupActor, GroupRoutes }
+import com.dblazejewski.groups.{GroupActor, GroupRoutes}
+import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import scala.util.{ Failure, Success }
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object GroupFeedHttpServer extends App with GroupRoutes {
+  val conf = ConfigFactory.load("reference.conf")
+
   implicit val system: ActorSystem = ActorSystem("group-feed-akka-http-server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
