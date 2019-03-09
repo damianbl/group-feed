@@ -28,7 +28,7 @@ object GroupFeedHttpServer extends App with GroupRoutes {
 
   import modules.profile.api._
 
-  Await.result(modules.db.run(modules.groupDal.tableQuery.schema.create), Duration.Inf)
+  Await.result(modules.db.run(modules.groupDal.tableQuery.schema.createIfNotExists), Duration.Inf)
 
   serverBinding.onComplete {
     case Success(bound) =>
