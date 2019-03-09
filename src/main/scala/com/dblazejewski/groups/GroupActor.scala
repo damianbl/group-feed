@@ -1,10 +1,11 @@
 package com.dblazejewski.groups
 
-import java.util.UUID
-
 import akka.actor.{ Actor, ActorLogging, Props }
+import com.byteslounge.slickrepo.meta.Entity
 
-final case class Group(id: UUID, name: String)
+final case class Group(id: Option[Int], name: String) extends Entity[Group, Int] {
+  def withId(id: Int): Group = this.copy(id = Some(id))
+}
 
 final case class Groups(groups: Seq[Group])
 

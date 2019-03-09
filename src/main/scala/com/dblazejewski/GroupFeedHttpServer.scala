@@ -1,18 +1,21 @@
 package com.dblazejewski
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import com.dblazejewski.groups.{GroupActor, GroupRoutes}
+import com.dblazejewski.groups.{ GroupActor, GroupRoutes }
+import com.dblazejewski.infrastructure.{ ConfigurationModuleImpl, PersistenceModuleImpl }
 import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 object GroupFeedHttpServer extends App with GroupRoutes {
   val conf = ConfigFactory.load("reference.conf")
+
+  val modules = new ConfigurationModuleImpl with PersistenceModuleImpl
 
   implicit val system: ActorSystem = ActorSystem("group-feed-akka-http-server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -22,6 +25,10 @@ object GroupFeedHttpServer extends App with GroupRoutes {
 
   lazy val routes: Route = groupRoutes
   val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 8080)
+
+  import modules.profile.api._
+
+  Await.result(modules.db.run(modules.groupDal.tableQuery.schema.create), Duration.Inf)
 
   serverBinding.onComplete {
     case Success(bound) =>

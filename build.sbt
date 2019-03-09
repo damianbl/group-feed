@@ -1,6 +1,8 @@
 lazy val akkaHttpVersion = "10.1.7"
 lazy val akkaVersion = "2.5.21"
 lazy val h2Version = "1.4.198"
+lazy val slickVersion = "3.3.0"
+lazy val typesafeConfigVersion = "1.3.3"
 
 lazy val root = (project in file(".")).
   settings(
@@ -15,6 +17,10 @@ lazy val root = (project in file(".")).
       "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
 
+      "com.typesafe.slick" %% "slick" % slickVersion,
+      "com.typesafe.slick" %% "slick-hikaricp" % slickVersion,
+      "com.typesafe" % "config" % typesafeConfigVersion,
+      "com.byteslounge" %% "slick-repo" % "1.4.3",
       "com.h2database" % "h2" % h2Version,
 
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
