@@ -2,7 +2,7 @@ package com.dblazejewski.repository
 
 import com.dblazejewski.domain.Group
 import com.dblazejewski.infrastructure.SqlDatabase
-import slick.lifted.TableQuery
+import slick.lifted.{ ProvenShape, TableQuery }
 
 class GroupRepository(override val database: SqlDatabase) extends GroupSchema {
 
@@ -15,11 +15,11 @@ trait GroupSchema {
   import database.driver.api._
 
   class GroupTable(tag: slick.lifted.Tag) extends Table[Group](tag, "GROUP") {
-    def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
 
-    def name = column[String]("name")
+    def name: Rep[String] = column[String]("name")
 
-    def * = (id.?, name) <> ((Group.apply _).tupled, Group.unapply)
+    def * : ProvenShape[Group] = (id.?, name) <> ((Group.apply _).tupled, Group.unapply)
   }
 
 }

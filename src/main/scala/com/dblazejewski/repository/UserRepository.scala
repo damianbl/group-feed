@@ -2,7 +2,7 @@ package com.dblazejewski.repository
 
 import com.dblazejewski.domain.User
 import com.dblazejewski.infrastructure.SqlDatabase
-import slick.lifted.TableQuery
+import slick.lifted.{ ProvenShape, TableQuery }
 
 class UserRepository(protected val database: SqlDatabase) extends UserSchema {
 
@@ -17,11 +17,11 @@ trait UserSchema {
   import database.driver.api._
 
   class UserTable(tag: slick.lifted.Tag) extends Table[User](tag, "USER") {
-    def id = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
 
-    def name = column[String]("name")
+    def name: Rep[String] = column[String]("name")
 
-    def * = (id.?, name) <> ((User.apply _).tupled, User.unapply)
+    def * : ProvenShape[User] = (id.?, name) <> ((User.apply _).tupled, User.unapply)
   }
 
 }
