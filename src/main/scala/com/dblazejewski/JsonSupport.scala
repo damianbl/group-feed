@@ -3,10 +3,9 @@ package com.dblazejewski
 import java.util.UUID
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.dblazejewski.groups.GroupActor.ActionPerformed
-import com.dblazejewski.groups.{ Group, Groups }
-import spray.json.{ DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat }
-import spray.json.deserializationError
+import com.dblazejewski.application.GroupActor.ActionPerformed
+import com.dblazejewski.domain.{ Group, Groups }
+import spray.json.{ DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat, deserializationError }
 
 trait UuidMarshalling {
 

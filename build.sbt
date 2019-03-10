@@ -20,7 +20,6 @@ lazy val root = (project in file(".")).
       "com.typesafe.slick" %% "slick" % slickVersion,
       "com.typesafe.slick" %% "slick-hikaricp" % slickVersion,
       "com.typesafe" % "config" % typesafeConfigVersion,
-      "com.byteslounge" %% "slick-repo" % "1.4.3",
       "com.h2database" % "h2" % h2Version,
 
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,

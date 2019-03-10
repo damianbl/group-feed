@@ -1,16 +1,16 @@
-package com.dblazejewski.groups
+package com.dblazejewski.api
 
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.event.Logging
-import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Directives.{ concat, pathEnd, pathPrefix }
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.MethodDirectives.get
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
-import akka.pattern.ask
 import akka.util.Timeout
 import com.dblazejewski.JsonSupport
-import com.dblazejewski.groups.GroupActor._
-
+import com.dblazejewski.application.GroupActor.GetUserGroups
+import com.dblazejewski.domain.Groups
+import akka.pattern.ask
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
@@ -22,7 +22,7 @@ trait GroupRoutes extends JsonSupport {
 
   def groupActor: ActorRef
 
-  implicit lazy val timeout: Timeout = Timeout(5.seconds)
+  implicit lazy val timeout: Timeout = Timeout(5 seconds)
 
   lazy val groupRoutes: Route =
     pathPrefix("groups") {

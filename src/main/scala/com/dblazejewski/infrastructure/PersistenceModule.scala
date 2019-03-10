@@ -1,10 +1,9 @@
 package com.dblazejewski.infrastructure
 
-import com.byteslounge.slickrepo.repository.Repository
-import com.dblazejewski.groups.{ Group, GroupRepository }
+import com.dblazejewski.repository.{ GroupRepository, PostRepository, UserParticipatesInGroupRepository, UserRepository }
 import slick.backend.DatabaseConfig
-import slick.driver.JdbcProfile
 import slick.dbio.DBIO
+import slick.driver.JdbcProfile
 
 import scala.concurrent.Future
 
@@ -18,11 +17,13 @@ trait DbModule extends Profile {
   implicit def executeOperation[T](databaseOperation: DBIO[T]): Future[T] = {
     db.run(databaseOperation)
   }
-
 }
 
 trait PersistenceModule {
-  val groupDal: Repository[Group, Int]
+  val groupDal: GroupRepository
+  val userDal: UserRepository
+  val postDal: PostRepository
+  val userParticipatesInGroupDal: UserParticipatesInGroupRepository
 }
 
 trait PersistenceModuleImpl extends PersistenceModule with DbModule {
@@ -33,6 +34,11 @@ trait PersistenceModuleImpl extends PersistenceModule with DbModule {
   override implicit val profile: JdbcProfile = dbConfig.driver
   override implicit val db: JdbcProfile#Backend#Database = dbConfig.db
 
-  override val groupDal = new GroupRepository(profile)
+  private val sqlDatabase = SqlDatabase(db, profile)
 
+  override val groupDal: GroupRepository = new GroupRepository(sqlDatabase)
+  override val userDal: UserRepository = new UserRepository(sqlDatabase)
+  override val postDal: PostRepository = new PostRepository(sqlDatabase)
+  override val userParticipatesInGroupDal: UserParticipatesInGroupRepository =
+    new UserParticipatesInGroupRepository(sqlDatabase)
 }

@@ -10,7 +10,7 @@ trait Configuration {
 
 trait ConfigurationModuleImpl extends Configuration {
   private val internalConfig: Config = {
-    val configDefaults = ConfigFactory.load(this.getClass().getClassLoader(), "reference.conf")
+    val configDefaults = ConfigFactory.load(this.getClass.getClassLoader, "reference.conf")
 
     scala.sys.props.get("reference.config") match {
       case Some(filename) => ConfigFactory.parseFile(new File(filename)).withFallback(configDefaults)
@@ -18,5 +18,5 @@ trait ConfigurationModuleImpl extends Configuration {
     }
   }
 
-  def config = internalConfig
+  def config: Config = internalConfig
 }

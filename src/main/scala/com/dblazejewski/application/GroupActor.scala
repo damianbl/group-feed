@@ -1,13 +1,7 @@
-package com.dblazejewski.groups
+package com.dblazejewski.application
 
 import akka.actor.{ Actor, ActorLogging, Props }
-import com.byteslounge.slickrepo.meta.Entity
-
-final case class Group(id: Option[Int], name: String) extends Entity[Group, Int] {
-  def withId(id: Int): Group = this.copy(id = Some(id))
-}
-
-final case class Groups(groups: Seq[Group])
+import com.dblazejewski.domain.{ Group, Groups }
 
 object GroupActor {
 

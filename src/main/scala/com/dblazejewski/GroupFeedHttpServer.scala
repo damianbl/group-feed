@@ -1,16 +1,18 @@
 package com.dblazejewski
 
-import akka.actor.{ ActorRef, ActorSystem }
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import com.dblazejewski.groups.{ GroupActor, GroupRoutes }
-import com.dblazejewski.infrastructure.{ ConfigurationModuleImpl, PersistenceModuleImpl }
+import com.dblazejewski.api.GroupRoutes
+import com.dblazejewski.application.GroupActor
+import com.dblazejewski.infrastructure.{ConfigurationModuleImpl, PersistenceModuleImpl}
 import com.typesafe.config.ConfigFactory
+import slick.jdbc.meta.MTable
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import scala.util.{ Failure, Success }
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object GroupFeedHttpServer extends App with GroupRoutes {
   val conf = ConfigFactory.load("reference.conf")
@@ -28,7 +30,23 @@ object GroupFeedHttpServer extends App with GroupRoutes {
 
   import modules.profile.api._
 
-  Await.result(modules.db.run(modules.groupDal.tableQuery.schema.createIfNotExists), Duration.Inf)
+  modules.db.run(MTable.getTables).map { existingTables => if (existingTables.isEmpty) createSchema }
+
+  def createSchema = {
+    val schema = modules.userDal.user.schema ++
+      modules.groupDal.group.schema ++
+      modules.postDal.post.schema ++
+      modules.userParticipatesInGroupDal.userParticipatesInGroup.schema
+
+    modules.db.run(DBIO.seq(schema.create))
+      .map { _ =>
+        log.info("Database schema created")
+      }
+      .recover {
+        case t: Throwable =>
+          log.error("Database schema creation failed", t)
+      }
+  }
 
   serverBinding.onComplete {
     case Success(bound) =>
