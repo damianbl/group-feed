@@ -17,11 +17,11 @@ trait PostSchema extends UserSchema with GroupSchema {
   import database.driver.api._
 
   class PostTable(tag: slick.lifted.Tag) extends Table[Post](tag, "POST") {
-    def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
-    def authorId: Rep[Int] = column[Int]("author_id")
+    def authorId: Rep[Long] = column[Long]("author_id")
 
-    def groupId: Rep[Int] = column[Int]("group_id")
+    def groupId: Rep[Long] = column[Long]("group_id")
 
     def content: Rep[String] = column[String]("content")
 

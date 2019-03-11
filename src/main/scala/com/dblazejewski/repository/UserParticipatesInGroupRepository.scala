@@ -17,11 +17,11 @@ trait UserParticipatesInGroupSchema extends UserSchema with GroupSchema {
 
   class UserParticipatesInGroupTable(tag: slick.lifted.Tag)
     extends Table[UserParticipatesInGroup](tag, "USER_PARTICIPATES_IN_GROUP") {
-    def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
-    def userId: Rep[Int] = column[Int]("userId")
+    def userId: Rep[Long] = column[Long]("userId")
 
-    def groupId: Rep[Int] = column[Int]("groupId")
+    def groupId: Rep[Long] = column[Long]("groupId")
 
     def authorFk: ForeignKeyQuery[UserTable, User] =
       foreignKey("user_participates_in_group_author_fk", userId, user)(_.id, onDelete = ForeignKeyAction.Cascade)

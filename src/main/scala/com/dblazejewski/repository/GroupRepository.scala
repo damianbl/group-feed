@@ -20,7 +20,7 @@ trait GroupSchema {
   import database.driver.api._
 
   class GroupTable(tag: slick.lifted.Tag) extends Table[Group](tag, "GROUP") {
-    def id: Rep[Int] = column[Int]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
 
     def name: Rep[String] = column[String]("name")
 

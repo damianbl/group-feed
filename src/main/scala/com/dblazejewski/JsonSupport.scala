@@ -24,7 +24,7 @@ trait JsonSupport extends SprayJsonSupport with UuidMarshalling {
 
   import DefaultJsonProtocol._
 
-  implicit val groupJsonFormat: RootJsonFormat[Group] = jsonFormat2(Group)
+  implicit val groupJsonFormat: RootJsonFormat[Group] = jsonFormat2(Group.apply)
   implicit val groupsJsonFormat: RootJsonFormat[Groups] = jsonFormat1(Groups)
 
   implicit val actionPerformedJsonFormat: RootJsonFormat[ActionPerformed] = jsonFormat1(ActionPerformed)

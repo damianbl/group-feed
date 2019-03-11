@@ -1,3 +1,3 @@
 package com.dblazejewski.domain
 
-case class User(id: Option[Int], name: String) extends IdEntity
+case class User(id: Option[Long], name: String) extends IdEntity
