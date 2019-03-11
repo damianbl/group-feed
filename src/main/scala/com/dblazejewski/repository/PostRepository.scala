@@ -31,7 +31,7 @@ trait PostSchema extends UserSchema with GroupSchema {
       foreignKey("post_author_fk", authorId, user)(_.id, onDelete = ForeignKeyAction.Cascade)
 
     def groupFk: ForeignKeyQuery[GroupTable, Group] =
-      foreignKey("post_group_fk", groupId, group)(_.id, onDelete = ForeignKeyAction.Cascade)
+      foreignKey("post_group_fk", groupId, groups)(_.id, onDelete = ForeignKeyAction.Cascade)
 
     def * : ProvenShape[Post] = (id.?, authorId, groupId, createdAt, content) <> ((Post.apply _).tupled, Post.unapply)
   }

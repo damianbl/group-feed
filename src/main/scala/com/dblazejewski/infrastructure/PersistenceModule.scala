@@ -20,10 +20,10 @@ trait DbModule extends Profile {
 }
 
 trait PersistenceModule {
-  val groupDal: GroupRepository
-  val userDal: UserRepository
-  val postDal: PostRepository
-  val userParticipatesInGroupDal: UserParticipatesInGroupRepository
+  val groupRepository: GroupRepository
+  val userRepository: UserRepository
+  val postRepository: PostRepository
+  val userParticipatesInGroupRepository: UserParticipatesInGroupRepository
 }
 
 trait PersistenceModuleImpl extends PersistenceModule with DbModule {
@@ -36,9 +36,9 @@ trait PersistenceModuleImpl extends PersistenceModule with DbModule {
 
   private val sqlDatabase = SqlDatabase(db, profile)
 
-  override val groupDal: GroupRepository = new GroupRepository(sqlDatabase)
-  override val userDal: UserRepository = new UserRepository(sqlDatabase)
-  override val postDal: PostRepository = new PostRepository(sqlDatabase)
-  override val userParticipatesInGroupDal: UserParticipatesInGroupRepository =
+  override val groupRepository: GroupRepository = new GroupRepository(sqlDatabase)
+  override val userRepository: UserRepository = new UserRepository(sqlDatabase)
+  override val postRepository: PostRepository = new PostRepository(sqlDatabase)
+  override val userParticipatesInGroupRepository: UserParticipatesInGroupRepository =
     new UserParticipatesInGroupRepository(sqlDatabase)
 }

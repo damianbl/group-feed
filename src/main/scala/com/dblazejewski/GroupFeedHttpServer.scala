@@ -1,18 +1,18 @@
 package com.dblazejewski
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ ActorRef, ActorSystem }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.dblazejewski.api.GroupRoutes
 import com.dblazejewski.application.GroupActor
-import com.dblazejewski.infrastructure.{ConfigurationModuleImpl, PersistenceModuleImpl}
+import com.dblazejewski.infrastructure.{ ConfigurationModuleImpl, PersistenceModuleImpl }
 import com.typesafe.config.ConfigFactory
 import slick.jdbc.meta.MTable
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.util.{ Failure, Success }
 
 object GroupFeedHttpServer extends App with GroupRoutes {
   val conf = ConfigFactory.load("reference.conf")
@@ -23,7 +23,7 @@ object GroupFeedHttpServer extends App with GroupRoutes {
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
-  val groupActor: ActorRef = system.actorOf(GroupActor.props, "groupActor")
+  val groupActor: ActorRef = system.actorOf(GroupActor.props(modules.groupRepository), "groupActor")
 
   lazy val routes: Route = groupRoutes
   val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 8080)
@@ -33,10 +33,10 @@ object GroupFeedHttpServer extends App with GroupRoutes {
   modules.db.run(MTable.getTables).map { existingTables => if (existingTables.isEmpty) createSchema }
 
   def createSchema = {
-    val schema = modules.userDal.user.schema ++
-      modules.groupDal.group.schema ++
-      modules.postDal.post.schema ++
-      modules.userParticipatesInGroupDal.userParticipatesInGroup.schema
+    val schema = modules.userRepository.user.schema ++
+      modules.groupRepository.groups.schema ++
+      modules.postRepository.post.schema ++
+      modules.userParticipatesInGroupRepository.userParticipatesInGroup.schema
 
     modules.db.run(DBIO.seq(schema.create))
       .map { _ =>

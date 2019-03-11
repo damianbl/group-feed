@@ -27,7 +27,7 @@ trait UserParticipatesInGroupSchema extends UserSchema with GroupSchema {
       foreignKey("user_participates_in_group_author_fk", userId, user)(_.id, onDelete = ForeignKeyAction.Cascade)
 
     def groupFk: ForeignKeyQuery[GroupTable, Group] =
-      foreignKey("user_participates_in_group_group_fk", groupId, group)(_.id, onDelete = ForeignKeyAction.Cascade)
+      foreignKey("user_participates_in_group_group_fk", groupId, groups)(_.id, onDelete = ForeignKeyAction.Cascade)
 
     def * : ProvenShape[UserParticipatesInGroup] =
       (id.?, userId, groupId) <> ((UserParticipatesInGroup.apply _).tupled, UserParticipatesInGroup.unapply)

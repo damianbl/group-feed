@@ -2,16 +2,15 @@ package com.dblazejewski.api
 
 import akka.actor.{ ActorRef, ActorSystem }
 import akka.event.Logging
-import akka.http.scaladsl.server.Directives.{ concat, pathEnd, pathPrefix }
+import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.server.Directives.{ concat, pathEnd, pathPrefix, _ }
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.directives.MethodDirectives.get
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
+import akka.pattern.ask
 import akka.util.Timeout
 import com.dblazejewski.JsonSupport
-import com.dblazejewski.application.GroupActor.GetUserGroups
-import com.dblazejewski.domain.Groups
-import akka.pattern.ask
-import scala.concurrent.Future
+import com.dblazejewski.application.GroupActor.{ ActionPerformed, CreateGroup }
+
 import scala.concurrent.duration._
 
 trait GroupRoutes extends JsonSupport {
@@ -25,13 +24,15 @@ trait GroupRoutes extends JsonSupport {
   implicit lazy val timeout: Timeout = Timeout(5 seconds)
 
   lazy val groupRoutes: Route =
-    pathPrefix("groups") {
+    pathPrefix("group") {
       pathEnd {
         concat(
-          get {
-            val groups: Future[Groups] =
-              (groupActor ? GetUserGroups).mapTo[Groups]
-            complete(groups)
+          post {
+            entity(as[String]) { name =>
+              onSuccess(groupActor ? CreateGroup(name)) {
+                case ActionPerformed(result) => complete(StatusCodes.OK, result)
+              }
+            }
           })
       }
     }
