@@ -22,6 +22,8 @@ lazy val root = (project in file(".")).
       "com.typesafe" % "config" % typesafeConfigVersion,
       "com.h2database" % "h2" % h2Version,
 
+      "org.scalaz" %% "scalaz-core" % "7.2.27",
+
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
       "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
       "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,

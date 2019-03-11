@@ -3,7 +3,7 @@ package com.dblazejewski
 import java.util.UUID
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.dblazejewski.application.GroupActor.ActionPerformed
+import com.dblazejewski.api.{ GroupIdAdded, GroupNameNotAdded }
 import com.dblazejewski.domain.{ Group, Groups }
 import spray.json.{ DefaultJsonProtocol, JsString, JsValue, JsonFormat, RootJsonFormat, deserializationError }
 
@@ -27,5 +27,6 @@ trait JsonSupport extends SprayJsonSupport with UuidMarshalling {
   implicit val groupJsonFormat: RootJsonFormat[Group] = jsonFormat2(Group.apply)
   implicit val groupsJsonFormat: RootJsonFormat[Groups] = jsonFormat1(Groups)
 
-  implicit val actionPerformedJsonFormat: RootJsonFormat[ActionPerformed] = jsonFormat1(ActionPerformed)
+  implicit val groupIdAddedHttpResponse: RootJsonFormat[GroupIdAdded] = jsonFormat1(GroupIdAdded.apply)
+  implicit val groupNameNotAddedHttpResponse: RootJsonFormat[GroupNameNotAdded] = jsonFormat2(GroupNameNotAdded.apply)
 }

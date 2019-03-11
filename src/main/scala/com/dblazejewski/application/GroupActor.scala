@@ -6,10 +6,14 @@ import com.dblazejewski.domain.{ Group, Groups }
 import com.dblazejewski.repository.GroupRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scalaz.Scalaz._
+import scalaz.OptionT.optionT
 
 object GroupActor {
 
-  final case class ActionPerformed(description: String)
+  final case class GroupAdded(id: Long)
+
+  final case class GroupAddFailed(name: String)
 
   final case class CreateGroup(name: String)
 
@@ -27,10 +31,10 @@ class GroupActor(groupRepository: GroupRepository) extends Actor with ActorLoggi
   def receive: Receive = {
     case CreateGroup(name) =>
       val localSender = sender()
-      groupRepository.add(create(name)).map { rowsAdded =>
-        if (rowsAdded == 1) localSender ! ActionPerformed(s"Group added [$name]")
-        else localSender ! ActionPerformed(s"Error adding a group [$name]")
-      }
+
+      optionT(groupRepository.add(create(name))).map { id =>
+        localSender ! GroupAdded(id)
+      } getOrElse localSender ! GroupAddFailed(name)
 
     case GetUserGroups =>
       sender() ! Groups(groups.toSeq)

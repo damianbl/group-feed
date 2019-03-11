@@ -9,9 +9,13 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
 import akka.util.Timeout
 import com.dblazejewski.JsonSupport
-import com.dblazejewski.application.GroupActor.{ ActionPerformed, CreateGroup }
+import com.dblazejewski.application.GroupActor.{ CreateGroup, GroupAddFailed, GroupAdded }
 
 import scala.concurrent.duration._
+
+final case class GroupIdAdded(id: Long)
+
+final case class GroupNameNotAdded(name: String, msg: String)
 
 trait GroupRoutes extends JsonSupport {
 
@@ -28,9 +32,12 @@ trait GroupRoutes extends JsonSupport {
       pathEnd {
         concat(
           post {
-            entity(as[String]) { name =>
-              onSuccess(groupActor ? CreateGroup(name)) {
-                case ActionPerformed(result) => complete(StatusCodes.OK, result)
+            entity(as[String]) { nameBody =>
+              onSuccess(groupActor ? CreateGroup(nameBody)) {
+                case GroupAdded(id) =>
+                  complete(StatusCodes.Created, GroupIdAdded(id))
+                case GroupAddFailed(name) =>
+                  complete(StatusCodes.InternalServerError, GroupNameNotAdded(name, "Error adding group"))
               }
             }
           })
