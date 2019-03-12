@@ -1,10 +1,10 @@
 package com.dblazejewski.support
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.dblazejewski.api.{ GroupIdsResponse, _ }
-import com.dblazejewski.application.GroupActor.{ AddUserToGroupFailed, ErrorFetchingUserGroups, UserAddedToGroup }
+import com.dblazejewski.api.{GroupIdsResponse, _}
+import com.dblazejewski.application.GroupActor.{AddUserToGroupFailed, ErrorFetchingUserGroups, UserAddedToGroup}
 import com.dblazejewski.domain.Group
-import spray.json.{ DefaultJsonProtocol, RootJsonFormat }
+import spray.json.{DefaultJsonProtocol, RootJsonFormat}
 
 trait JsonSupport extends SprayJsonSupport {
 

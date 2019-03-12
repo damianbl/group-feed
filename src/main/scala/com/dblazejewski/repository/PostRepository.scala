@@ -2,18 +2,25 @@ package com.dblazejewski.repository
 
 import java.time.LocalDateTime
 
-import com.dblazejewski.domain.{ Group, Post, User }
+import com.dblazejewski.domain.{Group, Post, User}
 import com.dblazejewski.infrastructure.SqlDatabase
 import com.dblazejewski.repository.support.RepositorySupport
-import slick.lifted.{ ForeignKeyQuery, ProvenShape, TableQuery }
+import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class PostRepository(override val database: SqlDatabase) extends PostSchema with RepositorySupport {
 
+  import database.driver.api._
+
+  def add(post: Post): Future[Option[Long]] = runInDb(
+    (posts returning posts.map(_.id) into ((post, id) => post.copy(id = Some(id))) += post).map(_.id)
+  )
 }
 
 trait PostSchema extends UserSchema with GroupSchema {
   protected val database: SqlDatabase
-  val post = TableQuery[PostTable]
+  val posts = TableQuery[PostTable]
 
   import database.driver.api._
 

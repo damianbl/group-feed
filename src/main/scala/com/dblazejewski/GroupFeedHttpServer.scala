@@ -44,7 +44,7 @@ object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoute
   def createSchema = {
     val schema = modules.userRepository.users.schema ++
       modules.groupRepository.groups.schema ++
-      modules.postRepository.post.schema ++
+      modules.postRepository.posts.schema ++
       modules.userGroupRepository.userGroups.schema
 
     modules.db.run(DBIO.seq(schema.create))

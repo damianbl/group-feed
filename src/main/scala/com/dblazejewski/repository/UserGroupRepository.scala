@@ -1,9 +1,9 @@
 package com.dblazejewski.repository
 
-import com.dblazejewski.domain.{ Group, User, UserGroup }
+import com.dblazejewski.domain.{Group, User, UserGroup}
 import com.dblazejewski.infrastructure.SqlDatabase
 import com.dblazejewski.repository.support.RepositorySupport
-import slick.lifted.{ ForeignKeyQuery, ProvenShape, TableQuery }
+import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,10 +17,12 @@ class UserGroupRepository(override val database: SqlDatabase) extends UserGroupS
       userGroup.copy(id = Some(id))) += userGroup).map(_.id))
 
   def findByUserId(userId: Long): Future[Seq[UserGroup]] = runInDb(
-    userGroups.filter(_.userId === userId).result)
+    userGroups.filter(_.userId === userId).result
+  )
 
   def isMemberOf(userId: Long, groupId: Long): Future[Boolean] = runInDb(
-    userGroups.filter(ug => ug.userId === userId && ug.groupId === groupId).result.headOption.map(_.isDefined))
+    userGroups.filter(ug => ug.userId === userId && ug.groupId === groupId).result.headOption.map(_.isDefined)
+  )
 }
 
 trait UserGroupSchema extends UserSchema with GroupSchema {

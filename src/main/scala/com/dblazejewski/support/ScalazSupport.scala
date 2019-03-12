@@ -1,16 +1,12 @@
 package com.dblazejewski.support
 
-import com.dblazejewski.support.ScalazSupport.{
-  ErrorMessage,
-  LiftedFutureResult,
-  TaskResult,
-  WrappedExceptionErrorMessage
-}
-import scalaz.{ EitherT, OptionT }
+import com.dblazejewski.support.ScalazSupport.{ErrorMessage, LiftedFutureResult, TaskResult,
+  WrappedExceptionErrorMessage}
 import scalaz.OptionT.optionT
 import scalaz.Scalaz._
+import scalaz.{EitherT, OptionT}
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 
 trait ScalazSupport {
 
@@ -19,12 +15,12 @@ trait ScalazSupport {
       if (v) Right(true)
       else Left(ErrorMessage(msg))
     } recover {
-      case e: Throwable => Left(WrappedExceptionErrorMessage(e, s"exception in rightIf, $msg"))
+      case e: Throwable => Left(WrappedExceptionErrorMessage(e, s"Exception in rightIf, $msg"))
     })
 
   protected def rightT[V](futV: Future[V])(implicit ec: ExecutionContext): TaskResult[V] = EitherT.fromEither {
     futV.map(v => Right(v)).recover {
-      case e: Throwable => Left(WrappedExceptionErrorMessage(e, s"exception '${e.getMessage}'"))
+      case e: Throwable => Left(WrappedExceptionErrorMessage(e, s"Exception '${e.getMessage}'"))
     }
   }
 
@@ -33,12 +29,13 @@ trait ScalazSupport {
       case None => Left(ErrorMessage(msg))
       case Some(v) => Right(v)
     } recover {
-      case e: Throwable => Left(WrappedExceptionErrorMessage(e, s"exception in rightIf, $msg"))
+      case e: Throwable => Left(WrappedExceptionErrorMessage(e, s"Exception in rightIf, $msg"))
     })
 
   protected def optT[A](a: Future[A])(implicit ec: ExecutionContext): LiftedFutureResult[A] = optionT(a.map(Option(_)))
 
-  protected def optT[A](a: Future[Option[A]])(implicit ec: ExecutionContext, dummy: DummyImplicit): LiftedFutureResult[A] = optionT(a)
+  protected def optT[A](a: Future[Option[A]])
+                       (implicit ec: ExecutionContext, dummy: DummyImplicit): LiftedFutureResult[A] = optionT(a)
 
 }
 
