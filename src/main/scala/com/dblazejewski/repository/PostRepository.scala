@@ -28,7 +28,7 @@ trait PostSchema extends UserSchema with GroupSchema {
     def createdAt: Rep[LocalDateTime] = column[LocalDateTime]("createdAt")
 
     def authorFk: ForeignKeyQuery[UserTable, User] =
-      foreignKey("post_author_fk", authorId, user)(_.id, onDelete = ForeignKeyAction.Cascade)
+      foreignKey("post_author_fk", authorId, users)(_.id, onDelete = ForeignKeyAction.Cascade)
 
     def groupFk: ForeignKeyQuery[GroupTable, Group] =
       foreignKey("post_group_fk", groupId, groups)(_.id, onDelete = ForeignKeyAction.Cascade)

@@ -9,35 +9,35 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
 import akka.util.Timeout
 import com.dblazejewski.JsonSupport
-import com.dblazejewski.application.GroupActor.{ CreateGroup, GroupAddFailed, GroupAdded }
+import com.dblazejewski.application.UserActor.{ CreateUser, UserAddFailed, UserAdded }
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration._
 
-final case class GroupIdAdded(id: Long)
+final case class UserIdAdded(id: Long)
 
-final case class GroupNameNotAdded(name: String, msg: String)
+final case class UserNameNotAdded(name: String, msg: String)
 
-trait GroupRoutes extends JsonSupport with StrictLogging {
+trait UserRoutes extends JsonSupport with StrictLogging {
 
   implicit def system: ActorSystem
 
-  def groupActor: ActorRef
+  def userActor: ActorRef
 
   private implicit lazy val timeout: Timeout = Timeout(5 seconds)
 
-  lazy val groupRoutes: Route =
-    pathPrefix("group") {
+  lazy val userRoutes: Route =
+    pathPrefix("user") {
       pathEnd {
         concat(
           post {
             entity(as[String]) { nameBody =>
-              onSuccess(groupActor ? CreateGroup(nameBody)) {
-                case GroupAdded(id) =>
-                  complete(StatusCodes.Created, GroupIdAdded(id))
-                case GroupAddFailed(name) =>
-                  logger.error(s"Error adding group [$name]")
-                  complete(StatusCodes.InternalServerError, GroupNameNotAdded(name, "Error adding group"))
+              onSuccess(userActor ? CreateUser(nameBody)) {
+                case UserAdded(id) =>
+                  complete(StatusCodes.Created, UserIdAdded(id))
+                case UserAddFailed(name) =>
+                  logger.error(s"Error adding user [$name]")
+                  complete(StatusCodes.InternalServerError, UserNameNotAdded(name, "Error adding user"))
               }
             }
           })

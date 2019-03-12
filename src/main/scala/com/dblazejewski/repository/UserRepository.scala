@@ -4,15 +4,22 @@ import com.dblazejewski.domain.User
 import com.dblazejewski.infrastructure.SqlDatabase
 import slick.lifted.{ ProvenShape, TableQuery }
 
-class UserRepository(protected val database: SqlDatabase) extends UserSchema {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
+class UserRepository(protected val database: SqlDatabase) extends UserSchema {
+  def add(user: User): Future[Option[Long]] = {
+    import database.driver.api._
+    database.db.run((users returning users.map(_.id)
+      into ((user, id) => user.copy(id = Some(id)))) += user)
+  }.map(_.id)
 }
 
 trait UserSchema {
 
   protected val database: SqlDatabase
 
-  val user = TableQuery[UserTable]
+  val users = TableQuery[UserTable]
 
   import database.driver.api._
 

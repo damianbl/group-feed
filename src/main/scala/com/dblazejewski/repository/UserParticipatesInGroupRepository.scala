@@ -24,7 +24,7 @@ trait UserParticipatesInGroupSchema extends UserSchema with GroupSchema {
     def groupId: Rep[Long] = column[Long]("groupId")
 
     def authorFk: ForeignKeyQuery[UserTable, User] =
-      foreignKey("user_participates_in_group_author_fk", userId, user)(_.id, onDelete = ForeignKeyAction.Cascade)
+      foreignKey("user_participates_in_group_author_fk", userId, users)(_.id, onDelete = ForeignKeyAction.Cascade)
 
     def groupFk: ForeignKeyQuery[GroupTable, Group] =
       foreignKey("user_participates_in_group_group_fk", groupId, groups)(_.id, onDelete = ForeignKeyAction.Cascade)
