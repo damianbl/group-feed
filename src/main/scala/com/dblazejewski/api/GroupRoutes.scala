@@ -21,6 +21,8 @@ final case class BecomeMemberOfGroupBody(groupName: String, userId: Long)
 
 final case class AddGroupBody(name: String)
 
+final case class GroupIdsResponse(ids: Seq[Long])
+
 trait GroupRoutes extends JsonSupport with StrictLogging {
 
   implicit def system: ActorSystem
@@ -62,16 +64,20 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
                 }
               })
           }
+        } ~
+        pathPrefix("user" / LongNumber) { userIdParam =>
+          {
+            concat(
+              get {
+                onSuccess(groupActor ? GetUserGroups(userIdParam)) {
+                  case UserGroups(_, groupIds) =>
+                    complete(StatusCodes.OK, GroupIdsResponse(groupIds))
+                  case error: ErrorFetchingUserGroups =>
+                    logger.error(s"Error fetching groups for user [${error.userId}]", error.msg)
+                    complete(StatusCodes.InternalServerError, error)
+                }
+              })
+          }
         }
     }
 }
-
-//pathPrefix(Segment / "user" / LongNumber) { (groupName, userId) =>
-//{
-//  concat(
-//  post {
-//  logger.info(s"Adding user [$userId] to group [$groupName]")
-//  complete(StatusCodes.Created, "")
-//})
-//}
-//}

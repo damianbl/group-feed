@@ -2,7 +2,7 @@ package com.dblazejewski.application
 
 import akka.actor.{ Actor, ActorLogging, Props }
 import com.dblazejewski.domain.Group._
-import com.dblazejewski.domain.{ Group, Groups, UserGroup }
+import com.dblazejewski.domain.{ Group, UserGroup }
 import com.dblazejewski.repository.{ GroupRepository, UserGroupRepository, UserRepository }
 import com.dblazejewski.support.ScalazSupport
 import scalaz.EitherT
@@ -26,7 +26,11 @@ object GroupActor {
 
   final case class AddUserToGroupFailed(groupName: String, userId: Long, msg: String)
 
-  final case object GetUserGroups
+  final case class GetUserGroups(userId: Long)
+
+  final case class UserGroups(userId: Long, groupIds: Seq[Long])
+
+  final case class ErrorFetchingUserGroups(userId: Long, msg: String)
 
   def props(
     groupRepository: GroupRepository,
@@ -47,12 +51,12 @@ class GroupActor(
   def receive: Receive = {
     case CreateGroup(name) => createGroup(name)
     case BecomeMember(groupName, userId) => becomeMember(groupName, userId)
-    case GetUserGroups =>
-      sender() ! Groups(groups.toSeq)
+    case GetUserGroups(userId) => fetchUserGroups(userId)
   }
 
   private def createGroup(name: String) = {
     val localSender = sender()
+
     optionT(groupRepository.add(create(name))).map { id =>
       localSender ! GroupAdded(id)
     } getOrElse localSender ! GroupAddFailed(name)
@@ -80,6 +84,18 @@ class GroupActor(
       case t: Throwable =>
         log.error(s"Error adding user [$userId] to group [$groupName]", t.getMessage)
         localSender ! AddUserToGroupFailed(groupName, userId, t.getMessage)
+    }
+  }
+
+  private def fetchUserGroups(userId: Long) = {
+    val localSender = sender()
+
+    userGroupRepository.findByUserId(userId).map { userGroups =>
+      localSender ! UserGroups(userId, userGroups.map(_.groupId))
+    }.recover {
+      case t: Throwable =>
+        log.error(s"Error fetching user [$userId] groups", t.getMessage)
+        localSender ! ErrorFetchingUserGroups(userId, t.getMessage)
     }
   }
 
