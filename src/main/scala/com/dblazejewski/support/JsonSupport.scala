@@ -1,9 +1,10 @@
 package com.dblazejewski.support
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.dblazejewski.api.{GroupIdAdded, GroupNameNotAdded, UserIdAdded, UserNameNotAdded}
-import com.dblazejewski.domain.{Group, Groups}
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+import com.dblazejewski.api._
+import com.dblazejewski.application.GroupActor.{ AddUserToGroupFailed, UserAddedToGroup }
+import com.dblazejewski.domain.{ Group, Groups }
+import spray.json.{ DefaultJsonProtocol, RootJsonFormat }
 
 trait JsonSupport extends SprayJsonSupport {
 
@@ -17,5 +18,15 @@ trait JsonSupport extends SprayJsonSupport {
 
   implicit val userIdAddedHttpResponse: RootJsonFormat[UserIdAdded] = jsonFormat1(UserIdAdded.apply)
   implicit val userNameNotAddedHttpResponse: RootJsonFormat[UserNameNotAdded] = jsonFormat2(UserNameNotAdded.apply)
+  implicit val userAddedToGroupHttpResponse: RootJsonFormat[UserAddedToGroup] = jsonFormat2(UserAddedToGroup.apply)
+  implicit val addUserToGroupFailedHttpResponse: RootJsonFormat[AddUserToGroupFailed] =
+    jsonFormat3(AddUserToGroupFailed.apply)
+  implicit val becomeMemberOfGroupBody: RootJsonFormat[BecomeMemberOfGroupBody] =
+    jsonFormat2(BecomeMemberOfGroupBody.apply)
+
+  implicit val addUserBody: RootJsonFormat[AddUserBody] =
+    jsonFormat1(AddUserBody.apply)
+  implicit val addGroupBody: RootJsonFormat[AddGroupBody] =
+    jsonFormat1(AddGroupBody.apply)
 
 }

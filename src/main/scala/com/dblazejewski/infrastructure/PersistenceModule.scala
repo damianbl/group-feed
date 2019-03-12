@@ -1,6 +1,6 @@
 package com.dblazejewski.infrastructure
 
-import com.dblazejewski.repository.{ GroupRepository, PostRepository, UserParticipatesInGroupRepository, UserRepository }
+import com.dblazejewski.repository.{ GroupRepository, PostRepository, UserGroupRepository, UserRepository }
 import slick.backend.DatabaseConfig
 import slick.dbio.DBIO
 import slick.driver.JdbcProfile
@@ -23,7 +23,7 @@ trait PersistenceModule {
   val groupRepository: GroupRepository
   val userRepository: UserRepository
   val postRepository: PostRepository
-  val userParticipatesInGroupRepository: UserParticipatesInGroupRepository
+  val userGroupRepository: UserGroupRepository
 }
 
 trait PersistenceModuleImpl extends PersistenceModule with DbModule {
@@ -39,6 +39,5 @@ trait PersistenceModuleImpl extends PersistenceModule with DbModule {
   override val groupRepository: GroupRepository = new GroupRepository(sqlDatabase)
   override val userRepository: UserRepository = new UserRepository(sqlDatabase)
   override val postRepository: PostRepository = new PostRepository(sqlDatabase)
-  override val userParticipatesInGroupRepository: UserParticipatesInGroupRepository =
-    new UserParticipatesInGroupRepository(sqlDatabase)
+  override val userGroupRepository: UserGroupRepository = new UserGroupRepository(sqlDatabase)
 }

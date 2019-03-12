@@ -27,7 +27,8 @@ object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoute
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
-  val groupActor: ActorRef = system.actorOf(GroupActor.props(modules.groupRepository), "groupActor")
+  val groupActor: ActorRef = system.actorOf(
+    GroupActor.props(modules.groupRepository, modules.userRepository, modules.userGroupRepository), "groupActor")
   val userActor: ActorRef = system.actorOf(UserActor.props(modules.userRepository), "userActor")
 
   lazy val routes: Route = requestWrapper {
@@ -44,7 +45,7 @@ object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoute
     val schema = modules.userRepository.users.schema ++
       modules.groupRepository.groups.schema ++
       modules.postRepository.post.schema ++
-      modules.userParticipatesInGroupRepository.userParticipatesInGroup.schema
+      modules.userGroupRepository.userGroups.schema
 
     modules.db.run(DBIO.seq(schema.create))
       .map { _ =>

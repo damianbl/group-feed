@@ -8,11 +8,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class UserRepository(protected val database: SqlDatabase) extends UserSchema {
-  def add(user: User): Future[Option[Long]] = {
-    import database.driver.api._
-    database.db.run((users returning users.map(_.id)
-      into ((user, id) => user.copy(id = Some(id)))) += user)
-  }.map(_.id)
+
+  import database.driver.api._
+
+  def add(user: User): Future[Option[Long]] = database.db.run((users returning users.map(_.id)
+    into ((user, id) => user.copy(id = Some(id)))) += user).map(_.id)
+
+  def findById(id: Long): Future[Option[User]] = database.db.run(users.filter(_.id === id).result.headOption)
 }
 
 trait UserSchema {
