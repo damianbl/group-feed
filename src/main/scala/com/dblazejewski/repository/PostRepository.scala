@@ -4,9 +4,10 @@ import java.time.LocalDateTime
 
 import com.dblazejewski.domain.{ Group, Post, User }
 import com.dblazejewski.infrastructure.SqlDatabase
+import com.dblazejewski.repository.support.RepositorySupport
 import slick.lifted.{ ForeignKeyQuery, ProvenShape, TableQuery }
 
-class PostRepository(override val database: SqlDatabase) extends PostSchema {
+class PostRepository(override val database: SqlDatabase) extends PostSchema with RepositorySupport {
 
 }
 

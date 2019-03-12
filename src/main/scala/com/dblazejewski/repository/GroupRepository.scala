@@ -2,19 +2,21 @@ package com.dblazejewski.repository
 
 import com.dblazejewski.domain.Group
 import com.dblazejewski.infrastructure.SqlDatabase
+import com.dblazejewski.repository.support.RepositorySupport
 import slick.lifted.{ ProvenShape, TableQuery }
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class GroupRepository(override val database: SqlDatabase) extends GroupSchema {
+class GroupRepository(override val database: SqlDatabase) extends GroupSchema with RepositorySupport {
 
   import database.driver.api._
 
-  def add(group: Group): Future[Option[Long]] = database.db.run((groups returning groups.map(_.id)
-    into ((user, id) => user.copy(id = Some(id)))) += group).map(_.id)
+  def add(group: Group): Future[Option[Long]] = runInDb(
+    (groups returning groups.map(_.id) into ((user, id) => user.copy(id = Some(id))) += group).map(_.id))
 
-  def findByName(name: String): Future[Option[Group]] =
-    database.db.run(groups.filter(_.name.toLowerCase === name.toLowerCase).result.headOption)
+  def findByName(name: String): Future[Option[Group]] = runInDb(
+    groups.filter(_.name.toLowerCase === name.toLowerCase).result.headOption)
 }
 
 trait GroupSchema {
