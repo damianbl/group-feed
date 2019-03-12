@@ -1,7 +1,13 @@
 package com.dblazejewski.support
 
-import com.dblazejewski.support.ScalazSupport.{ ErrorMessage, TaskResult, WrappedExceptionErrorMessage }
-import scalaz.EitherT
+import com.dblazejewski.support.ScalazSupport.{
+  ErrorMessage,
+  LiftedFutureResult,
+  TaskResult,
+  WrappedExceptionErrorMessage
+}
+import scalaz.{ EitherT, OptionT }
+import scalaz.OptionT.optionT
 import scalaz.Scalaz._
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -29,11 +35,18 @@ trait ScalazSupport {
     } recover {
       case e: Throwable => Left(WrappedExceptionErrorMessage(e, s"exception in rightIf, $msg"))
     })
+
+  protected def optT[A](a: Future[A])(implicit ec: ExecutionContext): LiftedFutureResult[A] = optionT(a.map(Option(_)))
+
+  protected def optT[A](a: Future[Option[A]])(implicit ec: ExecutionContext, dummy: DummyImplicit): LiftedFutureResult[A] = optionT(a)
+
 }
 
 object ScalazSupport {
 
   type TaskResult[V] = EitherT[Future, Error, V]
+
+  type LiftedFutureResult[A] = OptionT[Future, A]
 
   trait Error {
     val msg: String

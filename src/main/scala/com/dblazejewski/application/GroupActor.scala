@@ -32,6 +32,8 @@ object GroupActor {
 
   final case class ErrorFetchingUserGroups(userId: Long, msg: String)
 
+  final case class UserNotFound(userId: Long)
+
   def props(
     groupRepository: GroupRepository,
     userRepository: UserRepository,
@@ -89,6 +91,13 @@ class GroupActor(
 
   private def fetchUserGroups(userId: Long) = {
     val localSender = sender()
+
+    (for (
+      _ <- optT(userRepository.findById(userId));
+      userGroups <- optT(userGroupRepository.findByUserId(userId))
+    ) yield {
+      localSender ! UserGroups(userId, userGroups.map(_.groupId))
+    }).getOrElse(localSender ! UserNotFound(userId))
 
     userGroupRepository.findByUserId(userId).map { userGroups =>
       localSender ! UserGroups(userId, userGroups.map(_.groupId))

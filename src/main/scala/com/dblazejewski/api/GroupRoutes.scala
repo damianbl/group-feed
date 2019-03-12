@@ -75,6 +75,9 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
                   case error: ErrorFetchingUserGroups =>
                     logger.error(s"Error fetching groups for user [${error.userId}]", error.msg)
                     complete(StatusCodes.InternalServerError, error)
+                  case error: UserNotFound =>
+                    logger.error(s"User [${error.userId}] not found")
+                    complete(StatusCodes.NotFound, error.userId.toString)
                 }
               })
           }
