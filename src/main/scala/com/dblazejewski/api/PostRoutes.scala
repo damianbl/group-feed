@@ -15,7 +15,7 @@ import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration._
 
-final case class PostBody(authorId: UUID, content: String)
+final case class PostBody(authorId: UUID, groupId: UUID, content: String)
 
 final case class PostStoredResponse(id: UUID)
 
@@ -29,20 +29,17 @@ trait PostRoutes extends JsonSupport with StrictLogging {
 
   lazy val postRoutes: Route =
     pathPrefix("post") {
-      pathPrefix("group" / Segment) { groupIdParam => {
-        concat(
-          post {
-            entity(as[PostBody]) { postBody =>
-              onSuccess(postActor ? StorePost(postBody.authorId, UUID.fromString(groupIdParam), postBody.content)) {
-                case PostStored(postId, _, _) =>
-                  complete(StatusCodes.OK, PostStoredResponse(postId))
-                case error: StorePostFailed =>
-                  logger.error(s"Error adding post by user [${error.userId}] to group [${error.groupId}]", error.msg)
-                  complete(StatusCodes.InternalServerError, error)
-              }
+      concat(
+        post {
+          entity(as[PostBody]) { postBody =>
+            onSuccess(postActor ? StorePost(postBody.authorId, postBody.groupId, postBody.content)) {
+              case PostStored(postId, _, _) =>
+                complete(StatusCodes.OK, PostStoredResponse(postId))
+              case error: StorePostFailed =>
+                logger.error(s"Error adding post by user [${error.userId}] to group [${error.groupId}]", error.msg)
+                complete(StatusCodes.InternalServerError, error)
             }
-          })
-      }
-      }
+          }
+        })
     }
 }

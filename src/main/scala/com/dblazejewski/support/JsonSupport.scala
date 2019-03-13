@@ -43,7 +43,7 @@ trait JsonSupport extends SprayJsonSupport {
     jsonFormat2(ErrorFetchingUserGroups.apply)
 
   implicit val storePostFailed: RootJsonFormat[StorePostFailed] = jsonFormat3(StorePostFailed.apply)
-  implicit val postBody: RootJsonFormat[PostBody] = jsonFormat2(PostBody.apply)
+  implicit val postBody: RootJsonFormat[PostBody] = jsonFormat3(PostBody.apply)
   implicit val postStoredResponse: RootJsonFormat[PostStoredResponse] = jsonFormat1(PostStoredResponse.apply)
 
 }

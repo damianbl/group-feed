@@ -15,15 +15,15 @@ object GroupActor {
 
   final case class GroupAdded(id: UUID)
 
-  final case class GroupAddFailed(name: String)
+  final case class GroupAddFailed(name: String, msg: String)
 
   final case class CreateGroup(name: String)
 
-  final case class BecomeMember(groupName: String, userId: UUID)
+  final case class BecomeMember(groupId: UUID, userId: UUID)
 
-  final case class UserAddedToGroup(groupName: String, userId: UUID)
+  final case class UserAddedToGroup(groupId: UUID, userId: UUID)
 
-  final case class AddUserToGroupFailed(groupName: String, userId: UUID, msg: String)
+  final case class AddUserToGroupFailed(groupId: UUID, userId: UUID, msg: String)
 
   final case class GetUserGroups(userId: UUID)
 
@@ -47,7 +47,7 @@ class GroupActor(groupRepository: GroupRepository,
 
   def receive: Receive = {
     case CreateGroup(name) => createGroup(name)
-    case BecomeMember(groupName, userId) => becomeMember(groupName, userId)
+    case BecomeMember(groupId, userId) => becomeMember(groupId, userId)
     case GetUserGroups(userId) => fetchUserGroups(userId)
   }
 
@@ -59,15 +59,16 @@ class GroupActor(groupRepository: GroupRepository,
       .map(localSender ! GroupAdded(_))
       .recover {
         case t: Throwable =>
-          localSender ! GroupAddFailed(name)
+          log.error(s"Error adding group [$name]")
+          localSender ! GroupAddFailed(name, t.getMessage)
       }
   }
 
-  private def becomeMember(groupName: String, userId: UUID) = {
+  private def becomeMember(groupId: UUID, userId: UUID) = {
     val localSender = sender()
 
     val result = for (
-      group <- rightT(groupRepository.findByName(groupName), s"Group [$groupName] not found");
+      group <- rightT(groupRepository.findById(groupId), s"Group [$groupId] not found");
       user <- rightT(userRepository.findById(userId), s"User [$userId] not found");
       _ <- rightIf(
         userGroupRepository.isMemberOf(userId, group.id).map(!_),
@@ -77,14 +78,14 @@ class GroupActor(groupRepository: GroupRepository,
 
     result.toEither.map {
       case Right(_) =>
-        localSender ! UserAddedToGroup(groupName, userId)
+        localSender ! UserAddedToGroup(groupId, userId)
       case Left(error) =>
-        log.error(s"Error adding user [$userId] to group [$groupName]", error.msg)
-        localSender ! AddUserToGroupFailed(groupName, userId, error.msg)
+        log.error(s"Error adding user [$userId] to group [$groupId]", error.msg)
+        localSender ! AddUserToGroupFailed(groupId, userId, error.msg)
     }.recover {
       case t: Throwable =>
-        log.error(s"Error adding user [$userId] to group [$groupName]", t.getMessage)
-        localSender ! AddUserToGroupFailed(groupName, userId, t.getMessage)
+        log.error(s"Error adding user [$userId] to group [$groupId]", t.getMessage)
+        localSender ! AddUserToGroupFailed(groupId, userId, t.getMessage)
     }
   }
 

@@ -19,7 +19,7 @@ final case class GroupIdAdded(id: UUID)
 
 final case class GroupNameNotAdded(name: String, msg: String)
 
-final case class BecomeMemberOfGroupBody(groupName: String, userId: UUID)
+final case class BecomeMemberOfGroupBody(groupId: UUID, userId: UUID)
 
 final case class AddGroupBody(name: String)
 
@@ -42,9 +42,9 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
               onSuccess(groupActor ? CreateGroup(body.name)) {
                 case GroupAdded(id) =>
                   complete(StatusCodes.Created, GroupIdAdded(id))
-                case GroupAddFailed(name) =>
-                  logger.error(s"Error adding group [$name]")
-                  complete(StatusCodes.InternalServerError, GroupNameNotAdded(name, "Error adding group"))
+                case GroupAddFailed(name, msg) =>
+                  logger.error(s"Error adding group [$name]", msg)
+                  complete(StatusCodes.InternalServerError, GroupNameNotAdded(name, msg))
               }
             }
           })
@@ -54,13 +54,13 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
             concat(
               post {
                 entity(as[BecomeMemberOfGroupBody]) { body =>
-                  onSuccess(groupActor ? BecomeMember(body.groupName, body.userId)) {
+                  onSuccess(groupActor ? BecomeMember(body.groupId, body.userId)) {
                     case userAdded: UserAddedToGroup =>
                       complete(StatusCodes.OK, userAdded)
                     case addUserToGroupFailed: AddUserToGroupFailed =>
                       logger.error(
                         s"""|Error adding user [${addUserToGroupFailed.userId}]
-                            |to group [${addUserToGroupFailed.groupName}]""".stripMargin, addUserToGroupFailed.msg)
+                            |to group [${addUserToGroupFailed.groupId}]""".stripMargin, addUserToGroupFailed.msg)
                       complete(StatusCodes.InternalServerError, addUserToGroupFailed)
                   }
                 }
