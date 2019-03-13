@@ -1,8 +1,10 @@
 package com.dblazejewski.repository
 
+import java.util.UUID
+
 import com.dblazejewski.domain.{Group, User, UserGroup}
 import com.dblazejewski.infrastructure.SqlDatabase
-import com.dblazejewski.repository.support.RepositorySupport
+import com.dblazejewski.repository.support.{RepositorySupport, UuidSupport}
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,20 +14,24 @@ class UserGroupRepository(override val database: SqlDatabase) extends UserGroupS
 
   import database.driver.api._
 
-  def add(userGroup: UserGroup): Future[Option[Long]] = runInDb(
+  def add(userGroup: UserGroup): Future[UUID] = runInDb(
     (userGroups returning userGroups.map(_.id) into ((userGroup, id) =>
-      userGroup.copy(id = Some(id))) += userGroup).map(_.id))
+      userGroup.copy(id = id)) += userGroup).map(_.id))
 
-  def findByUserId(userId: Long): Future[Seq[UserGroup]] = runInDb(
-    userGroups.filter(_.userId === userId).result
+  def findByUserId(userId: UUID): Future[Seq[UserGroup]] = runInDb(
+    userGroups.filter(_.userId === toByteArray(userId)).result
   )
 
-  def isMemberOf(userId: Long, groupId: Long): Future[Boolean] = runInDb(
-    userGroups.filter(ug => ug.userId === userId && ug.groupId === groupId).result.headOption.map(_.isDefined)
+  def isMemberOf(userId: UUID, groupId: UUID): Future[Boolean] = runInDb(
+    userGroups
+      .filter(ug => ug.userId === toByteArray(userId) && ug.groupId === toByteArray(groupId))
+      .result
+      .headOption
+      .map(_.isDefined)
   )
 }
 
-trait UserGroupSchema extends UserSchema with GroupSchema {
+trait UserGroupSchema extends UserSchema with GroupSchema with UuidSupport {
 
   protected val database: SqlDatabase
   val userGroups = TableQuery[UserGroupTable]
@@ -34,11 +40,11 @@ trait UserGroupSchema extends UserSchema with GroupSchema {
 
   class UserGroupTable(tag: slick.lifted.Tag)
     extends Table[UserGroup](tag, "USER_GROUP") {
-    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Array[Byte]] = column[Array[Byte]]("id", O.PrimaryKey)
 
-    def userId: Rep[Long] = column[Long]("userId")
+    def userId: Rep[Array[Byte]] = column[Array[Byte]]("userId")
 
-    def groupId: Rep[Long] = column[Long]("groupId")
+    def groupId: Rep[Array[Byte]] = column[Array[Byte]]("groupId")
 
     def authorFk: ForeignKeyQuery[UserTable, User] =
       foreignKey("user_group_author_fk", userId, users)(_.id, onDelete = ForeignKeyAction.Cascade)
@@ -46,8 +52,11 @@ trait UserGroupSchema extends UserSchema with GroupSchema {
     def groupFk: ForeignKeyQuery[GroupTable, Group] =
       foreignKey("user__group_group_fk", groupId, groups)(_.id, onDelete = ForeignKeyAction.Cascade)
 
-    def * : ProvenShape[UserGroup] =
-      (id.?, userId, groupId) <> ((UserGroup.apply _).tupled, UserGroup.unapply)
+    def * : ProvenShape[UserGroup] = (id, userId, groupId) <>
+      (nTuple =>
+        UserGroup.apply(nTuple._1, nTuple._2, nTuple._3),
+        (u: UserGroup) => Some((u.id, u.userId, u.groupId))
+      )
   }
 
 }

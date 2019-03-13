@@ -1,50 +1,47 @@
 package com.dblazejewski.application
 
-import akka.actor.{ Actor, ActorLogging, Props }
+import java.util.UUID
+
+import akka.actor.{Actor, ActorLogging, Props}
 import com.dblazejewski.domain.Group._
-import com.dblazejewski.domain.{ Group, UserGroup }
-import com.dblazejewski.repository.{ GroupRepository, UserGroupRepository, UserRepository }
+import com.dblazejewski.domain.{Group, UserGroup}
+import com.dblazejewski.repository.{GroupRepository, UserGroupRepository, UserRepository}
 import com.dblazejewski.support.ScalazSupport
-import scalaz.EitherT
-import scalaz.OptionT.optionT
 import scalaz.Scalaz._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 object GroupActor {
 
-  final case class GroupAdded(id: Long)
+  final case class GroupAdded(id: UUID)
 
   final case class GroupAddFailed(name: String)
 
   final case class CreateGroup(name: String)
 
-  final case class BecomeMember(groupName: String, userId: Long)
+  final case class BecomeMember(groupName: String, userId: UUID)
 
-  final case class UserAddedToGroup(groupName: String, userId: Long)
+  final case class UserAddedToGroup(groupName: String, userId: UUID)
 
-  final case class AddUserToGroupFailed(groupName: String, userId: Long, msg: String)
+  final case class AddUserToGroupFailed(groupName: String, userId: UUID, msg: String)
 
-  final case class GetUserGroups(userId: Long)
+  final case class GetUserGroups(userId: UUID)
 
-  final case class UserGroups(userId: Long, groupIds: Seq[Long])
+  final case class UserGroups(userId: UUID, groupIds: Seq[UUID])
 
-  final case class ErrorFetchingUserGroups(userId: Long, msg: String)
+  final case class ErrorFetchingUserGroups(userId: UUID, msg: String)
 
-  final case class UserNotFound(userId: Long)
+  final case class UserNotFound(userId: UUID)
 
-  def props(
-    groupRepository: GroupRepository,
-    userRepository: UserRepository,
-    userGroupRepository: UserGroupRepository): Props =
+  def props(groupRepository: GroupRepository,
+            userRepository: UserRepository,
+            userGroupRepository: UserGroupRepository): Props =
     Props(new GroupActor(groupRepository, userRepository, userGroupRepository))
 }
 
-class GroupActor(
-  groupRepository: GroupRepository,
-  userRepository: UserRepository,
-  userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
+class GroupActor(groupRepository: GroupRepository,
+                 userRepository: UserRepository,
+                 userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
 
   import GroupActor._
 
@@ -59,21 +56,25 @@ class GroupActor(
   private def createGroup(name: String) = {
     val localSender = sender()
 
-    optionT(groupRepository.add(create(name))).map { id =>
-      localSender ! GroupAdded(id)
-    } getOrElse localSender ! GroupAddFailed(name)
+    groupRepository
+      .add(create(name))
+      .map(localSender ! GroupAdded(_))
+      .recover {
+        case t: Throwable =>
+          localSender ! GroupAddFailed(name)
+      }
   }
 
-  private def becomeMember(groupName: String, userId: Long) = {
+  private def becomeMember(groupName: String, userId: UUID) = {
     val localSender = sender()
 
-    val result: EitherT[Future, ScalazSupport.Error, Option[Long]] = for (
+    val result = for (
       group <- rightT(groupRepository.findByName(groupName), s"Group [$groupName] not found");
       user <- rightT(userRepository.findById(userId), s"User [$userId] not found");
       _ <- rightIf(
-        userGroupRepository.isMemberOf(userId, group.id.get).map(!_),
+        userGroupRepository.isMemberOf(userId, group.id).map(!_),
         s"User [$userId] already member of group [${group.name}]");
-      userAddedToGroup <- rightT(userGroupRepository.add(UserGroup(None, user.id.get, group.id.get)))
+      userAddedToGroup <- rightT(userGroupRepository.add(UserGroup(UUID.randomUUID, user.id, group.id)))
     ) yield userAddedToGroup
 
     result.toEither.map {
@@ -89,7 +90,7 @@ class GroupActor(
     }
   }
 
-  private def fetchUserGroups(userId: Long) = {
+  private def fetchUserGroups(userId: UUID) = {
     val localSender = sender()
 
     (for (

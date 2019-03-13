@@ -1,8 +1,10 @@
 package com.dblazejewski.api
 
-import akka.actor.{ ActorRef, ActorSystem }
+import java.util.UUID
+
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{ concat, pathEnd, pathPrefix, _ }
+import akka.http.scaladsl.server.Directives.{concat, pathEnd, pathPrefix, _}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
@@ -13,15 +15,15 @@ import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration._
 
-final case class GroupIdAdded(id: Long)
+final case class GroupIdAdded(id: UUID)
 
 final case class GroupNameNotAdded(name: String, msg: String)
 
-final case class BecomeMemberOfGroupBody(groupName: String, userId: Long)
+final case class BecomeMemberOfGroupBody(groupName: String, userId: UUID)
 
 final case class AddGroupBody(name: String)
 
-final case class GroupIdsResponse(ids: Seq[Long])
+final case class GroupIdsResponse(ids: Seq[UUID])
 
 trait GroupRoutes extends JsonSupport with StrictLogging {
 
@@ -65,22 +67,21 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
               })
           }
         } ~
-        pathPrefix("user" / LongNumber) { userIdParam =>
-          {
-            concat(
-              get {
-                onSuccess(groupActor ? GetUserGroups(userIdParam)) {
-                  case UserGroups(_, groupIds) =>
-                    complete(StatusCodes.OK, GroupIdsResponse(groupIds))
-                  case error: ErrorFetchingUserGroups =>
-                    logger.error(s"Error fetching groups for user [${error.userId}]", error.msg)
-                    complete(StatusCodes.InternalServerError, error)
-                  case error: UserNotFound =>
-                    logger.error(s"User [${error.userId}] not found")
-                    complete(StatusCodes.NotFound, error.userId.toString)
-                }
-              })
-          }
+        pathPrefix("user" / Segment) { userIdParam => {
+          concat(
+            get {
+              onSuccess(groupActor ? GetUserGroups(UUID.fromString(userIdParam))) {
+                case UserGroups(_, groupIds) =>
+                  complete(StatusCodes.OK, GroupIdsResponse(groupIds))
+                case error: ErrorFetchingUserGroups =>
+                  logger.error(s"Error fetching groups for user [${error.userId}]", error.msg)
+                  complete(StatusCodes.InternalServerError, error)
+                case error: UserNotFound =>
+                  logger.error(s"User [${error.userId}] not found")
+                  complete(StatusCodes.NotFound, error.userId.toString)
+              }
+            })
+        }
         }
     }
 }

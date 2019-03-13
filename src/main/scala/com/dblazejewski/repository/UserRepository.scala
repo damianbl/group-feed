@@ -1,5 +1,7 @@
 package com.dblazejewski.repository
 
+import java.util.UUID
+
 import com.dblazejewski.domain.User
 import com.dblazejewski.infrastructure.SqlDatabase
 import com.dblazejewski.repository.support.RepositorySupport
@@ -12,16 +14,16 @@ class UserRepository(protected val database: SqlDatabase) extends UserSchema wit
 
   import database.driver.api._
 
-  def add(user: User): Future[Option[Long]] = runInDb(
-    (users returning users.map(_.id) into ((user, id) => user.copy(id = Some(id))) += user).map(_.id)
+  def add(user: User): Future[UUID] = runInDb(
+    (users returning users.map(_.id) into ((user, id) => user.copy(id = id)) += user).map(_.id)
   )
 
-  def findById(id: Long): Future[Option[User]] = runInDb(
-    users.filter(_.id === id).result.headOption
+  def findById(id: UUID): Future[Option[User]] = runInDb(
+    users.filter(_.id === toByteArray(id)).result.headOption
   )
 }
 
-trait UserSchema {
+trait UserSchema extends RepositorySupport {
 
   protected val database: SqlDatabase
 
@@ -30,11 +32,12 @@ trait UserSchema {
   import database.driver.api._
 
   class UserTable(tag: slick.lifted.Tag) extends Table[User](tag, "USER") {
-    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Array[Byte]] = column[Array[Byte]]("id", O.PrimaryKey)
 
     def name: Rep[String] = column[String]("name")
 
-    def * : ProvenShape[User] = (id.?, name) <> ((User.apply _).tupled, User.unapply)
+    def * : ProvenShape[User] =
+      (id, name) <> (tuple => User.apply(tuple._1, tuple._2), (u: User) => Some((u.id, u.name)))
   }
 
 }

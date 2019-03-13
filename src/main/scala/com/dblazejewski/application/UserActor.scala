@@ -1,17 +1,17 @@
 package com.dblazejewski.application
 
-import akka.actor.{ Actor, ActorLogging, Props }
+import java.util.UUID
+
+import akka.actor.{Actor, ActorLogging, Props}
 import com.dblazejewski.domain.Group
 import com.dblazejewski.domain.User._
 import com.dblazejewski.repository.UserRepository
-import scalaz.OptionT.optionT
-import scalaz.Scalaz._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object UserActor {
 
-  final case class UserAdded(id: Long)
+  final case class UserAdded(id: UUID)
 
   final case class UserAddFailed(name: String)
 
@@ -30,8 +30,12 @@ class UserActor(userRepository: UserRepository) extends Actor with ActorLogging 
     case CreateUser(name) =>
       val localSender = sender()
 
-      optionT(userRepository.add(create(name))).map { id =>
-        localSender ! UserAdded(id)
-      } getOrElse localSender ! UserAddFailed(name)
+      userRepository
+        .add(create(name))
+        .map(id => localSender ! UserAdded(id))
+        .recover {
+          case t: Throwable =>
+            localSender ! UserAddFailed(name)
+        }
   }
 }

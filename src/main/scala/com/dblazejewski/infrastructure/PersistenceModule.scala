@@ -29,7 +29,7 @@ trait PersistenceModule {
 trait PersistenceModuleImpl extends PersistenceModule with DbModule {
   this: Configuration =>
 
-  private val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("h2db")
+  private val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("hsqldb")
 
   override implicit val profile: JdbcProfile = dbConfig.driver
   override implicit val db: JdbcProfile#Backend#Database = dbConfig.db

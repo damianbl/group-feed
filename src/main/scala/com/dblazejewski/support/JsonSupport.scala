@@ -1,12 +1,24 @@
 package com.dblazejewski.support
 
+import java.util.UUID
+
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.dblazejewski.api.{GroupIdsResponse, _}
 import com.dblazejewski.application.GroupActor.{AddUserToGroupFailed, ErrorFetchingUserGroups, UserAddedToGroup}
 import com.dblazejewski.domain.Group
-import spray.json.{DefaultJsonProtocol, RootJsonFormat}
+import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
 
 trait JsonSupport extends SprayJsonSupport {
+
+  implicit object UUIDFormat extends JsonFormat[UUID] {
+    def write(uuid: UUID): JsValue = JsString(uuid.toString)
+
+    def read(value: JsValue): UUID =
+      value match {
+        case JsString(uuid) => UUID.fromString(uuid)
+        case _ => throw DeserializationException("Expected hexadecimal UUID string")
+      }
+  }
 
   import DefaultJsonProtocol._
 

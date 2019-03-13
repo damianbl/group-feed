@@ -1,11 +1,13 @@
 package com.dblazejewski.repository
 
 import java.time.LocalDateTime
+import java.util.UUID
 
 import com.dblazejewski.domain.{Group, Post, User}
 import com.dblazejewski.infrastructure.SqlDatabase
 import com.dblazejewski.repository.support.RepositorySupport
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -13,8 +15,8 @@ class PostRepository(override val database: SqlDatabase) extends PostSchema with
 
   import database.driver.api._
 
-  def add(post: Post): Future[Option[Long]] = runInDb(
-    (posts returning posts.map(_.id) into ((post, id) => post.copy(id = Some(id))) += post).map(_.id)
+  def add(post: Post): Future[UUID] = runInDb(
+    (posts returning posts.map(_.id) into ((post, id) => post.copy(id = id)) += post).map(_.id)
   )
 }
 
@@ -25,11 +27,11 @@ trait PostSchema extends UserSchema with GroupSchema {
   import database.driver.api._
 
   class PostTable(tag: slick.lifted.Tag) extends Table[Post](tag, "POST") {
-    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Array[Byte]] = column[Array[Byte]]("id", O.PrimaryKey)
 
-    def authorId: Rep[Long] = column[Long]("author_id")
+    def authorId: Rep[Array[Byte]] = column[Array[Byte]]("author_id")
 
-    def groupId: Rep[Long] = column[Long]("group_id")
+    def groupId: Rep[Array[Byte]] = column[Array[Byte]]("group_id")
 
     def content: Rep[String] = column[String]("content")
 
@@ -41,7 +43,11 @@ trait PostSchema extends UserSchema with GroupSchema {
     def groupFk: ForeignKeyQuery[GroupTable, Group] =
       foreignKey("post_group_fk", groupId, groups)(_.id, onDelete = ForeignKeyAction.Cascade)
 
-    def * : ProvenShape[Post] = (id.?, authorId, groupId, createdAt, content) <> ((Post.apply _).tupled, Post.unapply)
+    def * : ProvenShape[Post] = (id, authorId, groupId, createdAt, content) <>
+      (nTuple =>
+        Post.apply(nTuple._1, nTuple._2, nTuple._3, nTuple._4, nTuple._5),
+        (p: Post) => Some(p.id, p.authorId, p.groupId, p.createdAt, p.content)
+      )
   }
 
 }

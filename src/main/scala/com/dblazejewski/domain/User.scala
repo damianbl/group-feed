@@ -1,7 +1,9 @@
 package com.dblazejewski.domain
 
-case class User(id: Option[Long], name: String) extends IdEntity
+import java.util.UUID
+
+case class User(id: UUID, name: String) extends IdEntity
 
 object User {
-  def create(name: String) = User(None, name)
+  def create(name: String) = User(UUID.randomUUID, name)
 }

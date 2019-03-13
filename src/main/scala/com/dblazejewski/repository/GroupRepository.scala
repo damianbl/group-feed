@@ -1,8 +1,10 @@
 package com.dblazejewski.repository
 
+import java.util.UUID
+
 import com.dblazejewski.domain.Group
 import com.dblazejewski.infrastructure.SqlDatabase
-import com.dblazejewski.repository.support.RepositorySupport
+import com.dblazejewski.repository.support.{RepositorySupport, UuidSupport}
 import slick.lifted.{ProvenShape, TableQuery}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,8 +14,8 @@ class GroupRepository(override val database: SqlDatabase) extends GroupSchema wi
 
   import database.driver.api._
 
-  def add(group: Group): Future[Option[Long]] = runInDb(
-    (groups returning groups.map(_.id) into ((group, id) => group.copy(id = Some(id))) += group).map(_.id)
+  def add(group: Group): Future[UUID] = runInDb(
+    (groups returning groups.map(_.id) into ((group, id) => group.copy(id = id)) += group).map(_.id)
   )
 
   def findByName(name: String): Future[Option[Group]] = runInDb(
@@ -21,18 +23,19 @@ class GroupRepository(override val database: SqlDatabase) extends GroupSchema wi
   )
 }
 
-trait GroupSchema {
+trait GroupSchema extends UuidSupport {
   protected val database: SqlDatabase
   val groups = TableQuery[GroupTable]
 
   import database.driver.api._
 
   class GroupTable(tag: slick.lifted.Tag) extends Table[Group](tag, "GROUP") {
-    def id: Rep[Long] = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def id: Rep[Array[Byte]] = column[Array[Byte]]("id", O.PrimaryKey)
 
     def name: Rep[String] = column[String]("name", O.Unique)
 
-    def * : ProvenShape[Group] = (id.?, name) <> ((Group.apply _).tupled, Group.unapply)
+    def * : ProvenShape[Group] =
+      (id, name) <> (tuple => Group.apply(tuple._1, tuple._2), (g: Group) => Some((g.id, g.name)))
   }
 
 }
