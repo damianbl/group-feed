@@ -6,8 +6,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.dblazejewski.api.support.RoutesRequestWrapper
-import com.dblazejewski.api.{GroupRoutes, PostRoutes, UserRoutes}
-import com.dblazejewski.application.{GroupActor, PostActor, UserActor}
+import com.dblazejewski.api.{FeedRoutes, GroupRoutes, PostRoutes, UserRoutes}
+import com.dblazejewski.application.{FeedActor, GroupActor, PostActor, UserActor}
 import com.dblazejewski.infrastructure.{ConfigurationModuleImpl, PersistenceModuleImpl}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
@@ -18,7 +18,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object GroupFeedHttpServer extends App
-  with RoutesRequestWrapper with GroupRoutes with UserRoutes with PostRoutes with StrictLogging {
+  with RoutesRequestWrapper with GroupRoutes with UserRoutes with PostRoutes with FeedRoutes with StrictLogging {
   val conf = ConfigFactory.load("reference.conf")
 
   val modules = new ConfigurationModuleImpl with PersistenceModuleImpl
@@ -36,9 +36,16 @@ object GroupFeedHttpServer extends App
       modules.userRepository,
       modules.postRepository,
       modules.userGroupRepository), "postActor")
+  val feedActor: ActorRef = system.actorOf(
+    FeedActor.props(
+      modules.groupRepository,
+      modules.userRepository,
+      modules.postRepository,
+      modules.userGroupRepository), "feedActor")
+
 
   lazy val routes: Route = requestWrapper {
-    pathPrefix("api") {groupRoutes ~ userRoutes ~ postRoutes}
+    pathPrefix("api") {groupRoutes ~ userRoutes ~ postRoutes ~ feedRoutes}
   }
 
   val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 8080)

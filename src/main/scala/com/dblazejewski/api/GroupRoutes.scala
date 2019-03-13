@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{concat, pathEnd, pathPrefix, _}
+import akka.http.scaladsl.server.Directives.{pathEnd, pathPrefix, _}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
@@ -36,51 +36,48 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
   lazy val groupRoutes: Route =
     pathPrefix("group") {
       pathEnd {
-        concat(
-          post {
-            entity(as[AddGroupBody]) { body =>
-              onSuccess(groupActor ? CreateGroup(body.name)) {
-                case GroupAdded(id) =>
-                  complete(StatusCodes.Created, GroupIdAdded(id))
-                case GroupAddFailed(name, msg) =>
-                  logger.error(s"Error adding group [$name]", msg)
-                  complete(StatusCodes.InternalServerError, GroupNameNotAdded(name, msg))
-              }
+        post {
+          entity(as[AddGroupBody]) { body =>
+            onSuccess(groupActor ? CreateGroup(body.name)) {
+              case GroupAdded(id) =>
+                complete(StatusCodes.Created, GroupIdAdded(id))
+              case GroupAddFailed(name, msg) =>
+                logger.error(s"Error adding group [$name]", msg)
+                complete(StatusCodes.InternalServerError, GroupNameNotAdded(name, msg))
             }
-          })
+          }
+        }
       } ~
         pathPrefix("user") {
           pathEnd {
-            concat(
-              post {
-                entity(as[BecomeMemberOfGroupBody]) { body =>
-                  onSuccess(groupActor ? BecomeMember(body.groupId, body.userId)) {
-                    case userAdded: UserAddedToGroup =>
-                      complete(StatusCodes.OK, userAdded)
-                    case addUserToGroupFailed: AddUserToGroupFailed =>
-                      logger.error(
-                        s"""|Error adding user [${addUserToGroupFailed.userId}]
-                            |to group [${addUserToGroupFailed.groupId}]""".stripMargin, addUserToGroupFailed.msg)
-                      complete(StatusCodes.InternalServerError, addUserToGroupFailed)
-                  }
+            post {
+              entity(as[BecomeMemberOfGroupBody]) { body =>
+                onSuccess(groupActor ? BecomeMember(body.groupId, body.userId)) {
+                  case userAdded: UserAddedToGroup =>
+                    complete(StatusCodes.OK, userAdded)
+                  case addUserToGroupFailed: AddUserToGroupFailed =>
+                    logger.error(
+                      s"""|Error adding user [${addUserToGroupFailed.userId}]
+                          |to group [${addUserToGroupFailed.groupId}]""".stripMargin, addUserToGroupFailed.msg)
+                    complete(StatusCodes.InternalServerError, addUserToGroupFailed)
                 }
-              })
+              }
+            }
           }
         } ~
         pathPrefix("user" / Segment) { userIdParam => {
-          concat(
-            get {
-              onSuccess(groupActor ? GetUserGroups(UUID.fromString(userIdParam))) {
-                case UserGroups(_, groupIds) =>
-                  complete(StatusCodes.OK, GroupIdsResponse(groupIds))
-                case error: ErrorFetchingUserGroups =>
-                  logger.error(s"Error fetching groups for user [${error.userId}]", error.msg)
-                  complete(StatusCodes.InternalServerError, error)
-                case error: UserNotFound =>
-                  logger.error(s"User [${error.userId}] not found")
-                  complete(StatusCodes.NotFound, error.userId.toString)
-              }
-            })
+          get {
+            onSuccess(groupActor ? GetUserGroups(UUID.fromString(userIdParam))) {
+              case UserGroups(_, groupIds) =>
+                complete(StatusCodes.OK, GroupIdsResponse(groupIds))
+              case error: ErrorFetchingUserGroups =>
+                logger.error(s"Error fetching groups for user [${error.userId}]", error.msg)
+                complete(StatusCodes.InternalServerError, error)
+              case error: UserNotFound =>
+                logger.error(s"User [${error.userId}] not found")
+                complete(StatusCodes.NotFound, error.userId.toString)
+            }
+          }
         }
         }
     }

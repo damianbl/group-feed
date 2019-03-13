@@ -1,11 +1,13 @@
 package com.dblazejewski.support
 
+import java.time.LocalDateTime
 import java.util.UUID
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.dblazejewski.api.{GroupIdsResponse, PostStoredResponse, _}
+import com.dblazejewski.api.{GroupFeedResponse, GroupIdsResponse, PostStoredResponse, UserFeedResponse, _}
+import com.dblazejewski.application.FeedActor.{FeedItem, GetGroupFeedFailed, GetUserFeedFailed}
 import com.dblazejewski.application.GroupActor.{AddUserToGroupFailed, ErrorFetchingUserGroups, UserAddedToGroup}
-import com.dblazejewski.application.PostActor.{PostStored, StorePostFailed}
+import com.dblazejewski.application.PostActor.StorePostFailed
 import com.dblazejewski.domain.Group
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
 
@@ -18,6 +20,16 @@ trait JsonSupport extends SprayJsonSupport {
       value match {
         case JsString(uuid) => UUID.fromString(uuid)
         case _ => throw DeserializationException("Expected hexadecimal UUID string")
+      }
+  }
+
+  implicit object LocalDateTimeFormat extends JsonFormat[LocalDateTime] {
+    def write(localDateTime: LocalDateTime): JsValue = JsString(localDateTime.toString)
+
+    def read(value: JsValue): LocalDateTime =
+      value match {
+        case JsString(localDateTime) => LocalDateTime.parse(localDateTime)
+        case _ => throw DeserializationException("Expected LocalDateTime string")
       }
   }
 
@@ -45,5 +57,11 @@ trait JsonSupport extends SprayJsonSupport {
   implicit val storePostFailed: RootJsonFormat[StorePostFailed] = jsonFormat3(StorePostFailed.apply)
   implicit val postBody: RootJsonFormat[PostBody] = jsonFormat3(PostBody.apply)
   implicit val postStoredResponse: RootJsonFormat[PostStoredResponse] = jsonFormat1(PostStoredResponse.apply)
+
+  implicit val feedItem: RootJsonFormat[FeedItem] = jsonFormat3(FeedItem.apply)
+  implicit val groupFeedResponse: RootJsonFormat[GroupFeedResponse] = jsonFormat2(GroupFeedResponse.apply)
+  implicit val getGroupFeedFailed: RootJsonFormat[GetGroupFeedFailed] = jsonFormat2(GetGroupFeedFailed.apply)
+  implicit val userFeedResponse: RootJsonFormat[UserFeedResponse] = jsonFormat2(UserFeedResponse.apply)
+  implicit val getUserFeedFailed: RootJsonFormat[GetUserFeedFailed] = jsonFormat2(GetUserFeedFailed.apply)
 
 }

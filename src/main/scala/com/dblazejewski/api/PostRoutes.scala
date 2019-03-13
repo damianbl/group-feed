@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{concat, pathPrefix, _}
+import akka.http.scaladsl.server.Directives.{pathPrefix, _}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
@@ -29,17 +29,16 @@ trait PostRoutes extends JsonSupport with StrictLogging {
 
   lazy val postRoutes: Route =
     pathPrefix("post") {
-      concat(
-        post {
-          entity(as[PostBody]) { postBody =>
-            onSuccess(postActor ? StorePost(postBody.authorId, postBody.groupId, postBody.content)) {
-              case PostStored(postId, _, _) =>
-                complete(StatusCodes.OK, PostStoredResponse(postId))
-              case error: StorePostFailed =>
-                logger.error(s"Error adding post by user [${error.userId}] to group [${error.groupId}]", error.msg)
-                complete(StatusCodes.InternalServerError, error)
-            }
+      post {
+        entity(as[PostBody]) { postBody =>
+          onSuccess(postActor ? StorePost(postBody.authorId, postBody.groupId, postBody.content)) {
+            case PostStored(postId, _, _) =>
+              complete(StatusCodes.OK, PostStoredResponse(postId))
+            case error: StorePostFailed =>
+              logger.error(s"Error adding post by user [${error.userId}] to group [${error.groupId}]", error.msg)
+              complete(StatusCodes.InternalServerError, error)
           }
-        })
+        }
+      }
     }
 }

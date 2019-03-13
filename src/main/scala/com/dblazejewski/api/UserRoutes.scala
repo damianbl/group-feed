@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives.{concat, pathEnd, pathPrefix, _}
+import akka.http.scaladsl.server.Directives.{pathEnd, pathPrefix, _}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
@@ -32,18 +32,17 @@ trait UserRoutes extends JsonSupport with StrictLogging {
   lazy val userRoutes: Route =
     pathPrefix("user") {
       pathEnd {
-        concat(
-          post {
-            entity(as[AddUserBody]) { body =>
-              onSuccess(userActor ? CreateUser(body.name)) {
-                case UserAdded(id) =>
-                  complete(StatusCodes.Created, UserIdAdded(id))
-                case UserAddFailed(name) =>
-                  logger.error(s"Error adding user [$name]")
-                  complete(StatusCodes.InternalServerError, UserNameNotAdded(name, "Error adding user"))
-              }
+        post {
+          entity(as[AddUserBody]) { body =>
+            onSuccess(userActor ? CreateUser(body.name)) {
+              case UserAdded(id) =>
+                complete(StatusCodes.Created, UserIdAdded(id))
+              case UserAddFailed(name) =>
+                logger.error(s"Error adding user [$name]")
+                complete(StatusCodes.InternalServerError, UserNameNotAdded(name, "Error adding user"))
             }
-          })
+          }
+        }
       }
     }
 }
