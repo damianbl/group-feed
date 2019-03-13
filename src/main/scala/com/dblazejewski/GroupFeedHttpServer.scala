@@ -6,8 +6,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.dblazejewski.api.support.RoutesRequestWrapper
-import com.dblazejewski.api.{GroupRoutes, UserRoutes}
-import com.dblazejewski.application.{GroupActor, UserActor}
+import com.dblazejewski.api.{GroupRoutes, PostRoutes, UserRoutes}
+import com.dblazejewski.application.{GroupActor, PostActor, UserActor}
 import com.dblazejewski.infrastructure.{ConfigurationModuleImpl, PersistenceModuleImpl}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
@@ -17,7 +17,8 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoutes with UserRoutes with StrictLogging {
+object GroupFeedHttpServer extends App
+  with RoutesRequestWrapper with GroupRoutes with UserRoutes with PostRoutes with StrictLogging {
   val conf = ConfigFactory.load("reference.conf")
 
   val modules = new ConfigurationModuleImpl with PersistenceModuleImpl
@@ -29,16 +30,26 @@ object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoute
   val groupActor: ActorRef = system.actorOf(
     GroupActor.props(modules.groupRepository, modules.userRepository, modules.userGroupRepository), "groupActor")
   val userActor: ActorRef = system.actorOf(UserActor.props(modules.userRepository), "userActor")
+  val postActor: ActorRef = system.actorOf(
+    PostActor.props(
+      modules.groupRepository,
+      modules.userRepository,
+      modules.postRepository,
+      modules.userGroupRepository), "postActor")
 
   lazy val routes: Route = requestWrapper {
-    pathPrefix("api") {groupRoutes ~ userRoutes}
+    pathPrefix("api") {groupRoutes ~ userRoutes ~ postRoutes}
   }
 
   val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 8080)
 
   import modules.profile.api._
 
-  modules.db.run(MTable.getTables).map { existingTables => if (existingTables.isEmpty) createSchema }
+  modules.db.run(MTable.getTables).map {
+    existingTables =>
+      if (existingTables.isEmpty)
+        createSchema
+  }
 
   def createSchema = {
     val schema = modules.userRepository.users.schema ++

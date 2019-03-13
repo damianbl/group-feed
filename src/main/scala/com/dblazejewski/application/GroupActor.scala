@@ -4,7 +4,7 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, Props}
 import com.dblazejewski.domain.Group._
-import com.dblazejewski.domain.{Group, UserGroup}
+import com.dblazejewski.domain.UserGroup
 import com.dblazejewski.repository.{GroupRepository, UserGroupRepository, UserRepository}
 import com.dblazejewski.support.ScalazSupport
 import scalaz.Scalaz._
@@ -44,8 +44,6 @@ class GroupActor(groupRepository: GroupRepository,
                  userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
 
   import GroupActor._
-
-  var groups = Set.empty[Group]
 
   def receive: Receive = {
     case CreateGroup(name) => createGroup(name)

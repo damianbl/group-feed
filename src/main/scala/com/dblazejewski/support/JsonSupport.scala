@@ -3,8 +3,9 @@ package com.dblazejewski.support
 import java.util.UUID
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import com.dblazejewski.api.{GroupIdsResponse, _}
+import com.dblazejewski.api.{GroupIdsResponse, PostStoredResponse, _}
 import com.dblazejewski.application.GroupActor.{AddUserToGroupFailed, ErrorFetchingUserGroups, UserAddedToGroup}
+import com.dblazejewski.application.PostActor.{PostStored, StorePostFailed}
 import com.dblazejewski.domain.Group
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
 
@@ -40,5 +41,9 @@ trait JsonSupport extends SprayJsonSupport {
   implicit val groupIdsResponse: RootJsonFormat[GroupIdsResponse] = jsonFormat1(GroupIdsResponse.apply)
   implicit val errorFetchingUserGroups: RootJsonFormat[ErrorFetchingUserGroups] =
     jsonFormat2(ErrorFetchingUserGroups.apply)
+
+  implicit val storePostFailed: RootJsonFormat[StorePostFailed] = jsonFormat3(StorePostFailed.apply)
+  implicit val postBody: RootJsonFormat[PostBody] = jsonFormat2(PostBody.apply)
+  implicit val postStoredResponse: RootJsonFormat[PostStoredResponse] = jsonFormat1(PostStoredResponse.apply)
 
 }

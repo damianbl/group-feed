@@ -21,6 +21,11 @@ class GroupRepository(override val database: SqlDatabase) extends GroupSchema wi
   def findByName(name: String): Future[Option[Group]] = runInDb(
     groups.filter(_.name.toLowerCase === name.toLowerCase).result.headOption
   )
+
+  def findById(id: UUID): Future[Option[Group]] = runInDb(
+    groups.filter(_.id === toByteArray(id)).result.headOption
+  )
+
 }
 
 trait GroupSchema extends UuidSupport {
