@@ -1,22 +1,21 @@
 package com.dblazejewski
 
-import akka.actor.{ ActorRef, ActorSystem }
-import akka.event.Logging
+import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
-import com.dblazejewski.api.{ GroupRoutes, UserRoutes }
-import com.dblazejewski.application.{ GroupActor, UserActor }
-import com.dblazejewski.infrastructure.{ ConfigurationModuleImpl, PersistenceModuleImpl }
+import com.dblazejewski.api.support.RoutesRequestWrapper
+import com.dblazejewski.api.{GroupRoutes, UserRoutes}
+import com.dblazejewski.application.{GroupActor, UserActor}
+import com.dblazejewski.infrastructure.{ConfigurationModuleImpl, PersistenceModuleImpl}
 import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.StrictLogging
 import slick.jdbc.meta.MTable
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import scala.util.{ Failure, Success }
-import akka.http.scaladsl.server.Directives._
-import com.dblazejewski.api.support.RoutesRequestWrapper
-import com.typesafe.scalalogging.StrictLogging
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoutes with UserRoutes with StrictLogging {
   val conf = ConfigFactory.load("reference.conf")
@@ -32,7 +31,7 @@ object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoute
   val userActor: ActorRef = system.actorOf(UserActor.props(modules.userRepository), "userActor")
 
   lazy val routes: Route = requestWrapper {
-    pathPrefix("api") { groupRoutes ~ userRoutes }
+    pathPrefix("api") {groupRoutes ~ userRoutes}
   }
 
   val serverBinding: Future[Http.ServerBinding] = Http().bindAndHandle(routes, "localhost", 8080)
@@ -59,10 +58,9 @@ object GroupFeedHttpServer extends App with RoutesRequestWrapper with GroupRoute
 
   serverBinding.onComplete {
     case Success(bound) =>
-      println(s"Server online at http://${bound.localAddress.getHostString}:${bound.localAddress.getPort}/")
+      logger.info(s"Server online at http://${bound.localAddress.getHostString}:${bound.localAddress.getPort}/")
     case Failure(e) =>
-      Console.err.println(s"Server could not start!")
-      e.printStackTrace()
+      logger.error("Server could not start!", e)
       system.terminate()
   }
 
