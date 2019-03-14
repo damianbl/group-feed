@@ -10,12 +10,13 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
 import akka.util.Timeout
 import com.dblazejewski.application.FeedActor._
+import com.dblazejewski.domain.PostWithAuthor
 import com.dblazejewski.support.JsonSupport
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration._
 
-final case class GroupFeedResponse(groupId: UUID, feed: Seq[GroupFeedItem])
+final case class GroupFeedResponse(groupId: UUID, feed: Seq[PostWithAuthor])
 
 final case class UserFeedResponse(userId: UUID, feed: Seq[UserFeedItem])
 
@@ -36,7 +37,7 @@ trait FeedRoutes extends JsonSupport with StrictLogging {
               complete(StatusCodes.OK, GroupFeedResponse(groupId, feed))
             case error: GetGroupFeedFailed =>
               logger.error(s"Error fetching group [${error.groupId}] feed", error.msg)
-              complete(StatusCodes.InternalServerError, error)
+              complete(StatusCodes.NotFound, error)
           }
         }
 

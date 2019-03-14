@@ -3,7 +3,7 @@ package com.dblazejewski.repository
 import java.time.LocalDateTime
 import java.util.UUID
 
-import com.dblazejewski.domain.{Group, Post, User}
+import com.dblazejewski.domain.{Group, Post, PostWithAuthor, User}
 import com.dblazejewski.infrastructure.SqlDatabase
 import com.dblazejewski.repository.support.RepositorySupport
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
@@ -11,13 +11,21 @@ import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class PostRepository(override val database: SqlDatabase) extends PostSchema with RepositorySupport {
+class PostRepository(override val database: SqlDatabase) extends PostSchema with UserSchema with RepositorySupport {
 
   import database.driver.api._
 
   def add(post: Post): Future[UUID] = runInDb(
     (posts returning posts.map(_.id) into ((post, id) => post.copy(id = id)) += post).map(_.id)
   )
+
+  def findPostWithAuthorByGroup(groupId: UUID): Future[Seq[PostWithAuthor]] = {
+    val crossJoin = for {
+      (p, u) <- posts join users
+    } yield (p.id, p.authorId, u.name, p.groupId, p.createdAt, p.content)
+
+    runInDb(crossJoin.result.map(t => t.map(r => PostWithAuthor(r._1, r._2, r._3, r._4, r._5, r._6))))
+  }
 }
 
 trait PostSchema extends UserSchema with GroupSchema {

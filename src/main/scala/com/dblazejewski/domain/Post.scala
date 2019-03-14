@@ -8,3 +8,10 @@ case class Post(id: UUID,
                 groupId: UUID,
                 createdAt: LocalDateTime,
                 content: String) extends IdEntity
+
+case class PostWithAuthor(id: UUID,
+                          authorId: UUID,
+                          authorName: String,
+                          groupId: UUID,
+                          createdAt: LocalDateTime,
+                          content: String)

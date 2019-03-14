@@ -8,7 +8,7 @@ import com.dblazejewski.api.{GroupFeedResponse, GroupIdsResponse, PostStoredResp
 import com.dblazejewski.application.FeedActor._
 import com.dblazejewski.application.GroupActor.{AddUserToGroupFailed, ErrorFetchingUserGroups, UserAddedToGroup}
 import com.dblazejewski.application.PostActor.StorePostFailed
-import com.dblazejewski.domain.Group
+import com.dblazejewski.domain.{Group, PostWithAuthor}
 import spray.json.{DefaultJsonProtocol, DeserializationException, JsString, JsValue, JsonFormat, RootJsonFormat}
 
 trait JsonSupport extends SprayJsonSupport {
@@ -58,7 +58,7 @@ trait JsonSupport extends SprayJsonSupport {
   implicit val postBody: RootJsonFormat[PostBody] = jsonFormat3(PostBody.apply)
   implicit val postStoredResponse: RootJsonFormat[PostStoredResponse] = jsonFormat1(PostStoredResponse.apply)
 
-  implicit val groupFeedItem: RootJsonFormat[GroupFeedItem] = jsonFormat5(GroupFeedItem.apply)
+  implicit val postWithAuthor: RootJsonFormat[PostWithAuthor] = jsonFormat6(PostWithAuthor.apply)
   implicit val userFeedItem: RootJsonFormat[UserFeedItem] = jsonFormat6(UserFeedItem.apply)
   implicit val groupFeedResponse: RootJsonFormat[GroupFeedResponse] = jsonFormat2(GroupFeedResponse.apply)
   implicit val getGroupFeedFailed: RootJsonFormat[GetGroupFeedFailed] = jsonFormat2(GetGroupFeedFailed.apply)

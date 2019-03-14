@@ -7,11 +7,10 @@ import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.dblazejewski.api.support.RoutesRequestWrapper
 import com.dblazejewski.api.{FeedRoutes, GroupRoutes, PostRoutes, UserRoutes}
-import com.dblazejewski.application.{FeedActor, GroupActor, PostActor, UserActor}
+import com.dblazejewski.application._
 import com.dblazejewski.infrastructure.{ConfigurationModuleImpl, PersistenceModuleImpl}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.StrictLogging
-import slick.jdbc.meta.MTable
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -27,21 +26,34 @@ object GroupFeedHttpServer extends App
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
+  val aggregatorActor: ActorRef = system.actorOf(
+    AggregatorActor.props(modules.postRepository, modules.userGroupRepository), "aggregatorActor"
+  )
+
   val feedActor: ActorRef = system.actorOf(
     FeedActor.props(
       modules.groupRepository,
       modules.userRepository,
       modules.postRepository,
-      modules.userGroupRepository), "feedActor")
+      modules.userGroupRepository,
+      aggregatorActor), "feedActor")
+
   val groupActor: ActorRef = system.actorOf(
-    GroupActor.props(modules.groupRepository, modules.userRepository, modules.userGroupRepository, feedActor), "groupActor")
+    GroupActor.props(
+      modules.groupRepository,
+      modules.userRepository,
+      modules.userGroupRepository,
+      feedActor), "groupActor")
+
   val userActor: ActorRef = system.actorOf(UserActor.props(modules.userRepository), "userActor")
+
   val postActor: ActorRef = system.actorOf(
     PostActor.props(
       modules.groupRepository,
       modules.userRepository,
       modules.postRepository,
-      modules.userGroupRepository), "postActor")
+      modules.userGroupRepository,
+      aggregatorActor), "postActor")
 
   lazy val routes: Route = requestWrapper {
     pathPrefix("api") {groupRoutes ~ userRoutes ~ postRoutes ~ feedRoutes}
@@ -51,10 +63,7 @@ object GroupFeedHttpServer extends App
 
   import modules.profile.api._
 
-//  modules.db.run(MTable.getTables).map { existingTables =>
-//    if (existingTables.isEmpty)
-      createSchema
-//  }
+  createSchema
 
   def createSchema = {
     val schema = modules.userRepository.users.schema ++

@@ -3,8 +3,10 @@ package com.dblazejewski.application
 import java.time.LocalDateTime
 import java.util.UUID
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.dblazejewski.application.FeedActor.{GetGroupFeed, GetUserFeed, UserJoinedGroup}
+import com.dblazejewski.application.GroupFeedActor.GetGroupFeedWithResponseRef
+import com.dblazejewski.domain.PostWithAuthor
 import com.dblazejewski.repository.{GroupRepository, PostRepository, UserGroupRepository, UserRepository}
 import com.dblazejewski.support.ScalazSupport
 
@@ -16,13 +18,7 @@ object FeedActor {
 
   final case class GetGroupFeed(groupId: UUID)
 
-  final case class GroupFeedItem(postId: UUID,
-                                 createdAt: LocalDateTime,
-                                 content: String,
-                                 authorId: UUID,
-                                 authorName: String)
-
-  final case class ReturnGroupFeed(groupId: UUID, feed: Seq[GroupFeedItem])
+  final case class ReturnGroupFeed(groupId: UUID, feed: Seq[PostWithAuthor])
 
   final case class GetGroupFeedFailed(groupId: UUID, msg: String)
 
@@ -42,58 +38,52 @@ object FeedActor {
   def props(groupRepository: GroupRepository,
             userRepository: UserRepository,
             postRepository: PostRepository,
-            userGroupRepository: UserGroupRepository): Props =
-    Props(new FeedActor(groupRepository, userRepository, postRepository, userGroupRepository))
+            userGroupRepository: UserGroupRepository,
+            aggregatorActor: ActorRef): Props =
+    Props(new FeedActor(groupRepository, userRepository, postRepository, userGroupRepository, aggregatorActor))
 
 }
 
 class FeedActor(groupRepository: GroupRepository,
                 userRepository: UserRepository,
                 postRepository: PostRepository,
-                userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
+                userGroupRepository: UserGroupRepository,
+                aggregatorActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
 
-  private var userGroupsMapping = scala.collection.mutable.Map.empty[UUID, Seq[UUID]]
-
-  private val aggregatorActor = context.actorOf(
-    AggregatorActor.props(groupRepository, userRepository, postRepository, userGroupRepository), "aggregatorActor"
-  )
+  private var userGroupsMapping = Map.empty[UUID, Seq[UUID]]
 
   override def preStart(): Unit = {
     log.info("preStart")
     userGroupRepository.findAll().map { userGroupsSeq =>
-      userGroupsMapping = collection.mutable.Map(userGroupsSeq
+      userGroupsMapping = userGroupsSeq
         .groupBy(_.userId)
         .map { case (userId, userGroups) => (userId, userGroups.map(_.groupId)) }
-        .toSeq: _*
-      )
+
+      super.preStart()
     }
   }
 
   def receive: Receive = {
     case UserJoinedGroup(userId, groupId) => handleUserJoinedGroup(userId, groupId)
-    case GetGroupFeed(groupId) => getGroupFeed(groupId)
+    case GetGroupFeed(groupId) =>
+      aggregatorActor ! GetGroupFeedWithResponseRef(groupId, sender())
     case GetUserFeed(userId) => getUserFeed(userId)
   }
 
-  private def handleUserJoinedGroup(userId: UUID, groupId: UUID) = {
+  private def handleUserJoinedGroup(userId: UUID, groupId: UUID): Unit = {
     userGroupsMapping.get(userId) match {
       case Some(groups) =>
         log.info(s"Existing user [$userId] joined group [$groupId]")
-        userGroupsMapping.put(userId, groups :+ groupId)
+        userGroupsMapping = userGroupsMapping + (userId -> (groups :+ groupId))
       case _ =>
         log.info(s"New user [$userId] joined group [$groupId]")
-        userGroupsMapping.put(userId, groupId :: Nil)
+        userGroupsMapping = userGroupsMapping + (userId -> (groupId :: Nil))
     }
-  }
-
-  private def getGroupFeed(groupId: UUID) = {
-    val localSender = sender()
-
-//    aggregatorActor !
-
   }
 
   private def getUserFeed(userId: UUID) = {
     val localSender = sender()
+
+
   }
 }

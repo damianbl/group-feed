@@ -101,11 +101,7 @@ class GroupActor(groupRepository: GroupRepository,
       userGroups <- optT(userGroupRepository.findByUserId(userId))
     ) yield {
       localSender ! UserGroups(userId, userGroups.map(_.groupId))
-    }).getOrElse(localSender ! UserNotFound(userId))
-
-    userGroupRepository.findByUserId(userId).map { userGroups =>
-      localSender ! UserGroups(userId, userGroups.map(_.groupId))
-    }.recover {
+    }).getOrElse(localSender ! UserNotFound(userId)).recover {
       case t: Throwable =>
         log.error(s"Error fetching user [$userId] groups", t.getMessage)
         localSender ! ErrorFetchingUserGroups(userId, t.getMessage)

@@ -3,7 +3,8 @@ package com.dblazejewski.application
 import java.time.LocalDateTime
 import java.util.UUID
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.dblazejewski.application.AggregatorActor.NewPostAdded
 import com.dblazejewski.application.PostActor.{PostStored, StorePost, StorePostFailed}
 import com.dblazejewski.domain.Post
 import com.dblazejewski.repository.{GroupRepository, PostRepository, UserGroupRepository, UserRepository}
@@ -23,15 +24,17 @@ object PostActor {
   def props(groupRepository: GroupRepository,
             userRepository: UserRepository,
             postRepository: PostRepository,
-            userGroupRepository: UserGroupRepository): Props =
-    Props(new PostActor(groupRepository, userRepository, postRepository, userGroupRepository))
+            userGroupRepository: UserGroupRepository,
+            aggregatorActor: ActorRef): Props =
+    Props(new PostActor(groupRepository, userRepository, postRepository, userGroupRepository, aggregatorActor))
 
 }
 
 class PostActor(groupRepository: GroupRepository,
                 userRepository: UserRepository,
                 postRepository: PostRepository,
-                userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
+                userGroupRepository: UserGroupRepository,
+                aggregatorActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
 
   def receive: Receive = {
     case StorePost(authorId, groupId, content) => storePost(authorId, groupId, content)
@@ -54,6 +57,7 @@ class PostActor(groupRepository: GroupRepository,
     result.toEither.map {
       case Right(postId) =>
         localSender ! PostStored(postId, newPost.authorId, newPost.groupId)
+        aggregatorActor ! NewPostAdded(newPost.groupId)
       case Left(error) =>
         log.error(s"Error storing post for user [${newPost.authorId}] to group [${newPost.groupId}]", error.msg)
         localSender ! StorePostFailed(newPost.authorId, newPost.groupId, error.msg)

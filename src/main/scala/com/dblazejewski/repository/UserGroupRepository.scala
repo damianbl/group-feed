@@ -26,6 +26,10 @@ class UserGroupRepository(override val database: SqlDatabase) extends UserGroupS
     userGroups.result
   )
 
+  def findAllGroupIds(): Future[Seq[UUID]] = runInDb(
+    userGroups.map(ug => ug.groupId).groupBy(x => x).map(_._1).result.map(ids => ids.map(fromByteArray))
+  )
+
   def isMemberOf(userId: UUID, groupId: UUID): Future[Boolean] = runInDb(
     userGroups
       .filter(ug => ug.userId === toByteArray(userId) && ug.groupId === toByteArray(groupId))
