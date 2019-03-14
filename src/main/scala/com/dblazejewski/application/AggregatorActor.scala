@@ -3,7 +3,7 @@ package com.dblazejewski.application
 import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import com.dblazejewski.application.AggregatorActor.NewPostAdded
+import com.dblazejewski.application.AggregatorActor.{NewGroupCreated, NewPostAdded}
 import com.dblazejewski.application.FeedActor.GetGroupFeedFailed
 import com.dblazejewski.application.GroupFeedActor.GetGroupFeedWithResponseRef
 import com.dblazejewski.repository.{PostRepository, UserGroupRepository}
@@ -12,6 +12,8 @@ import com.dblazejewski.support.ScalazSupport
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object AggregatorActor {
+
+  final case class NewGroupCreated(groupId: UUID)
 
   final case class NewPostAdded(groupId: UUID)
 
@@ -35,8 +37,10 @@ class AggregatorActor(postRepository: PostRepository,
   }
 
   def receive: Receive = {
+    case NewGroupCreated(groupId) =>
+      groupFeedActors = groupFeedActors +
+        (groupId -> context.actorOf(GroupFeedActor.props(groupId, postRepository), s"group-actor-$groupId"))
     case getGroupFeedWithResponseRef: GetGroupFeedWithResponseRef =>
-      log.info(s"size: ${groupFeedActors.size}")
       groupFeedActors.get(getGroupFeedWithResponseRef.groupId) match {
         case Some(groupFeedActor) => groupFeedActor ! getGroupFeedWithResponseRef
         case _ =>

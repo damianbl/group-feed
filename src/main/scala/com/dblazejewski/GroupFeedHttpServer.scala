@@ -43,7 +43,8 @@ object GroupFeedHttpServer extends App
       modules.groupRepository,
       modules.userRepository,
       modules.userGroupRepository,
-      feedActor), "groupActor")
+      feedActor,
+      aggregatorActor), "groupActor")
 
   val userActor: ActorRef = system.actorOf(UserActor.props(modules.userRepository), "userActor")
 

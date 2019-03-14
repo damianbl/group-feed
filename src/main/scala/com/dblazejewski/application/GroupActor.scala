@@ -3,6 +3,7 @@ package com.dblazejewski.application
 import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.dblazejewski.application.AggregatorActor.NewGroupCreated
 import com.dblazejewski.application.FeedActor.UserJoinedGroup
 import com.dblazejewski.domain.Group._
 import com.dblazejewski.domain.UserGroup
@@ -37,14 +38,16 @@ object GroupActor {
   def props(groupRepository: GroupRepository,
             userRepository: UserRepository,
             userGroupRepository: UserGroupRepository,
-            feedActor: ActorRef): Props =
-    Props(new GroupActor(groupRepository, userRepository, userGroupRepository, feedActor))
+            feedActor: ActorRef,
+            aggregatorActor: ActorRef): Props =
+    Props(new GroupActor(groupRepository, userRepository, userGroupRepository, feedActor, aggregatorActor))
 }
 
 class GroupActor(groupRepository: GroupRepository,
                  userRepository: UserRepository,
                  userGroupRepository: UserGroupRepository,
-                 feedActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
+                 feedActor: ActorRef,
+                 aggregatorActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
 
   import GroupActor._
 
@@ -59,7 +62,10 @@ class GroupActor(groupRepository: GroupRepository,
 
     groupRepository
       .add(create(name))
-      .map(localSender ! GroupAdded(_))
+      .map { groupId =>
+        localSender ! GroupAdded(groupId)
+        aggregatorActor ! NewGroupCreated(groupId)
+      }
       .recover {
         case t: Throwable =>
           log.error(s"Error adding group [$name]")
