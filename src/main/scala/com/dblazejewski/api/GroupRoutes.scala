@@ -59,7 +59,7 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
                     logger.error(
                       s"""|Error adding user [${addUserToGroupFailed.userId}]
                           |to group [${addUserToGroupFailed.groupId}]""".stripMargin, addUserToGroupFailed.msg)
-                    complete(StatusCodes.InternalServerError, addUserToGroupFailed)
+                    complete(StatusCodes.BadRequest, addUserToGroupFailed)
                 }
               }
             }

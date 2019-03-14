@@ -15,9 +15,9 @@ import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration._
 
-final case class GroupFeedResponse(groupId: UUID, feed: Seq[FeedItem])
+final case class GroupFeedResponse(groupId: UUID, feed: Seq[GroupFeedItem])
 
-final case class UserFeedResponse(userId: UUID, feed: Seq[FeedItem])
+final case class UserFeedResponse(userId: UUID, feed: Seq[UserFeedItem])
 
 trait FeedRoutes extends JsonSupport with StrictLogging {
 

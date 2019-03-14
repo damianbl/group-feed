@@ -4,27 +4,38 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, Props}
-import com.dblazejewski.application.PostActor.{PostStored, StorePost, StorePostFailed}
-import com.dblazejewski.domain.Post
+import com.dblazejewski.application.FeedActor.{GetGroupFeed, GetUserFeed, UserJoinedGroup}
 import com.dblazejewski.repository.{GroupRepository, PostRepository, UserGroupRepository, UserRepository}
 import com.dblazejewski.support.ScalazSupport
-import scalaz.Scalaz._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object FeedActor {
 
+  final case class UserJoinedGroup(userId: UUID, groupId: UUID)
+
   final case class GetGroupFeed(groupId: UUID)
 
-  final case class FeedItem(authorName: String, content: String, createdAt: LocalDateTime)
+  final case class GroupFeedItem(postId: UUID,
+                                 createdAt: LocalDateTime,
+                                 content: String,
+                                 authorId: UUID,
+                                 authorName: String)
 
-  final case class ReturnGroupFeed(groupId: UUID, feed: Seq[FeedItem])
+  final case class ReturnGroupFeed(groupId: UUID, feed: Seq[GroupFeedItem])
 
   final case class GetGroupFeedFailed(groupId: UUID, msg: String)
 
   final case class GetUserFeed(userId: UUID)
 
-  final case class ReturnUserFeed(userId: UUID, feed: Seq[FeedItem])
+  final case class UserFeedItem(postId: UUID,
+                                createdAt: LocalDateTime,
+                                content: String,
+                                authorId: UUID,
+                                authorName: String,
+                                groupId: UUID)
+
+  final case class ReturnUserFeed(userId: UUID, feed: Seq[UserFeedItem])
 
   final case class GetUserFeedFailed(userId: UUID, msg: String)
 
@@ -41,35 +52,48 @@ class FeedActor(groupRepository: GroupRepository,
                 postRepository: PostRepository,
                 userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
 
-  def receive: Receive = {
-    case StorePost(authorId, groupId, content) => storePost(authorId, groupId, content)
+  private var userGroupsMapping = scala.collection.mutable.Map.empty[UUID, Seq[UUID]]
+
+  private val aggregatorActor = context.actorOf(
+    AggregatorActor.props(groupRepository, userRepository, postRepository, userGroupRepository), "aggregatorActor"
+  )
+
+  override def preStart(): Unit = {
+    log.info("preStart")
+    userGroupRepository.findAll().map { userGroupsSeq =>
+      userGroupsMapping = collection.mutable.Map(userGroupsSeq
+        .groupBy(_.userId)
+        .map { case (userId, userGroups) => (userId, userGroups.map(_.groupId)) }
+        .toSeq: _*
+      )
+    }
   }
 
-  private def storePost(authorId: UUID, groupId: UUID, content: String) = {
+  def receive: Receive = {
+    case UserJoinedGroup(userId, groupId) => handleUserJoinedGroup(userId, groupId)
+    case GetGroupFeed(groupId) => getGroupFeed(groupId)
+    case GetUserFeed(userId) => getUserFeed(userId)
+  }
+
+  private def handleUserJoinedGroup(userId: UUID, groupId: UUID) = {
+    userGroupsMapping.get(userId) match {
+      case Some(groups) =>
+        log.info(s"Existing user [$userId] joined group [$groupId]")
+        userGroupsMapping.put(userId, groups :+ groupId)
+      case _ =>
+        log.info(s"New user [$userId] joined group [$groupId]")
+        userGroupsMapping.put(userId, groupId :: Nil)
+    }
+  }
+
+  private def getGroupFeed(groupId: UUID) = {
     val localSender = sender()
 
-    val newPost = Post(UUID.randomUUID, authorId, groupId, LocalDateTime.now, content)
+//    aggregatorActor !
 
-    val result = for (
-      group <- rightT(groupRepository.findById(newPost.groupId), s"Group [${newPost.id}] not found");
-      user <- rightT(userRepository.findById(newPost.authorId), s"User [${newPost.authorId}] not found");
-      _ <- rightIf(
-        userGroupRepository.isMemberOf(user.id, group.id),
-        s"User [${user.id}] is not a member of group [${group.name}]");
-      postStored <- rightT(postRepository.add(newPost))
-    ) yield postStored
+  }
 
-    result.toEither.map {
-      case Right(postId) =>
-        localSender ! PostStored(postId, newPost.authorId, newPost.groupId)
-      case Left(error) =>
-        log.error(s"Error storing post for user [${newPost.authorId}] to group [${newPost.groupId}]", error.msg)
-        localSender ! StorePostFailed(newPost.authorId, newPost.groupId, error.msg)
-    }.recover {
-      case t: Throwable =>
-        log.error(s"Error storing post for user [${newPost.authorId}] to group [${newPost.groupId}]", t.getMessage)
-        localSender ! StorePostFailed(newPost.authorId, newPost.groupId, t.getMessage)
-    }
-
+  private def getUserFeed(userId: UUID) = {
+    val localSender = sender()
   }
 }

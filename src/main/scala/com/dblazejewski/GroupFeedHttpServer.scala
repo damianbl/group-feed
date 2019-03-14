@@ -27,8 +27,14 @@ object GroupFeedHttpServer extends App
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val executionContext: ExecutionContext = system.dispatcher
 
+  val feedActor: ActorRef = system.actorOf(
+    FeedActor.props(
+      modules.groupRepository,
+      modules.userRepository,
+      modules.postRepository,
+      modules.userGroupRepository), "feedActor")
   val groupActor: ActorRef = system.actorOf(
-    GroupActor.props(modules.groupRepository, modules.userRepository, modules.userGroupRepository), "groupActor")
+    GroupActor.props(modules.groupRepository, modules.userRepository, modules.userGroupRepository, feedActor), "groupActor")
   val userActor: ActorRef = system.actorOf(UserActor.props(modules.userRepository), "userActor")
   val postActor: ActorRef = system.actorOf(
     PostActor.props(
@@ -36,13 +42,6 @@ object GroupFeedHttpServer extends App
       modules.userRepository,
       modules.postRepository,
       modules.userGroupRepository), "postActor")
-  val feedActor: ActorRef = system.actorOf(
-    FeedActor.props(
-      modules.groupRepository,
-      modules.userRepository,
-      modules.postRepository,
-      modules.userGroupRepository), "feedActor")
-
 
   lazy val routes: Route = requestWrapper {
     pathPrefix("api") {groupRoutes ~ userRoutes ~ postRoutes ~ feedRoutes}
@@ -52,11 +51,10 @@ object GroupFeedHttpServer extends App
 
   import modules.profile.api._
 
-  modules.db.run(MTable.getTables).map {
-    existingTables =>
-      if (existingTables.isEmpty)
-        createSchema
-  }
+//  modules.db.run(MTable.getTables).map { existingTables =>
+//    if (existingTables.isEmpty)
+      createSchema
+//  }
 
   def createSchema = {
     val schema = modules.userRepository.users.schema ++
@@ -64,7 +62,7 @@ object GroupFeedHttpServer extends App
       modules.postRepository.posts.schema ++
       modules.userGroupRepository.userGroups.schema
 
-    modules.db.run(DBIO.seq(schema.create))
+    modules.db.run(DBIO.seq(schema.createIfNotExists))
       .map { _ =>
         logger.info("Database schema created")
       }

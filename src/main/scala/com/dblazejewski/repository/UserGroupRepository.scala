@@ -22,6 +22,10 @@ class UserGroupRepository(override val database: SqlDatabase) extends UserGroupS
     userGroups.filter(_.userId === toByteArray(userId)).result
   )
 
+  def findAll(): Future[Seq[UserGroup]] = runInDb(
+    userGroups.result
+  )
+
   def isMemberOf(userId: UUID, groupId: UUID): Future[Boolean] = runInDb(
     userGroups
       .filter(ug => ug.userId === toByteArray(userId) && ug.groupId === toByteArray(groupId))
