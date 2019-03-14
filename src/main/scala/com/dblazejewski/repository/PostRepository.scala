@@ -21,10 +21,15 @@ class PostRepository(override val database: SqlDatabase) extends PostSchema with
 
   def findPostWithAuthorByGroup(groupId: UUID): Future[Seq[PostWithAuthor]] = {
     val crossJoin = for {
-      (p, u) <- (posts join users on(_.authorId === _.id)).sortBy(_._1.createdAt.desc)
+      (p, u) <-
+        (posts join users on (_.authorId === _.id))
+          .filter(_._1.groupId === toByteArray(groupId))
+          .sortBy(_._1.createdAt.desc)
     } yield (p.id, p.authorId, u.name, p.groupId, p.createdAt, p.content)
 
-    runInDb(crossJoin.result.map(t => t.map(r => PostWithAuthor(r._1, r._2, r._3, r._4, r._5, r._6))))
+    runInDb(crossJoin.result.map(_.map { case (id, author_id, author_name, group_id, created_at, content) =>
+      PostWithAuthor(id, author_id, author_name, group_id, created_at, content)
+    }))
   }
 }
 
