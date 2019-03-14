@@ -13,7 +13,7 @@ import com.dblazejewski.application.FeedActor._
 import com.dblazejewski.domain.PostWithAuthor
 import com.dblazejewski.support.JsonSupport
 import com.typesafe.scalalogging.StrictLogging
-
+import com.dblazejewski.support.UuidSupport._
 import scala.concurrent.duration._
 
 final case class GroupFeedResponse(groupId: UUID, feed: Seq[PostWithAuthor])
@@ -32,7 +32,7 @@ trait FeedRoutes extends JsonSupport with StrictLogging {
     pathPrefix("feed") {
       pathPrefix("group" / Segment) { groupIdParam =>
         get {
-          onSuccess(feedActor ? GetGroupFeed(UUID.fromString(groupIdParam))) {
+          onSuccess(feedActor ? GetGroupFeed(getUUID(groupIdParam))) {
             case ReturnGroupFeed(groupId, feed) =>
               complete(StatusCodes.OK, GroupFeedResponse(groupId, feed))
             case error: GetGroupFeedFailed =>
@@ -44,7 +44,7 @@ trait FeedRoutes extends JsonSupport with StrictLogging {
       } ~
         pathPrefix("all" / Segment) { userIdParam =>
           get {
-            onSuccess(feedActor ? GetUserFeed(UUID.fromString(userIdParam))) {
+            onSuccess(feedActor ? GetUserFeed(getUUID(userIdParam))) {
               case ReturnUserFeed(userId, feed) =>
                 complete(StatusCodes.OK, UserFeedResponse(userId, feed))
               case error: GetUserFeedFailed =>

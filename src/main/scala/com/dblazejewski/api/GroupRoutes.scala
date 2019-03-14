@@ -10,7 +10,7 @@ import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
 import akka.util.Timeout
 import com.dblazejewski.application.GroupActor._
-import com.dblazejewski.support.JsonSupport
+import com.dblazejewski.support.{JsonSupport, UuidSupport}
 import com.typesafe.scalalogging.StrictLogging
 
 import scala.concurrent.duration._
@@ -67,7 +67,7 @@ trait GroupRoutes extends JsonSupport with StrictLogging {
         } ~
         pathPrefix("user" / Segment) { userIdParam => {
           get {
-            onSuccess(groupActor ? GetUserGroups(UUID.fromString(userIdParam))) {
+            onSuccess(groupActor ? GetUserGroups(UuidSupport.getUUID(userIdParam))) {
               case UserGroups(_, groupIds) =>
                 complete(StatusCodes.OK, GroupIdsResponse(groupIds))
               case error: ErrorFetchingUserGroups =>

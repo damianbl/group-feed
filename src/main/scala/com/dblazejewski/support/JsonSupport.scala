@@ -18,7 +18,7 @@ trait JsonSupport extends SprayJsonSupport {
 
     def read(value: JsValue): UUID =
       value match {
-        case JsString(uuid) => UUID.fromString(uuid)
+        case JsString(uuid) => UuidSupport.getUUID(uuid)
         case _ => throw DeserializationException("Expected hexadecimal UUID string")
       }
   }
