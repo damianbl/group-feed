@@ -21,7 +21,7 @@ class PostRepository(override val database: SqlDatabase) extends PostSchema with
 
   def findPostWithAuthorByGroup(groupId: UUID): Future[Seq[PostWithAuthor]] = {
     val crossJoin = for {
-      (p, u) <- posts join users on(_.authorId === _.id)
+      (p, u) <- (posts join users on(_.authorId === _.id)).sortBy(_._1.createdAt.desc)
     } yield (p.id, p.authorId, u.name, p.groupId, p.createdAt, p.content)
 
     runInDb(crossJoin.result.map(t => t.map(r => PostWithAuthor(r._1, r._2, r._3, r._4, r._5, r._6))))
