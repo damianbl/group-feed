@@ -5,6 +5,13 @@
 `sbt run` 
 - it starts both the server and the file HSQL database
 
+## Technology stack
+- Scala 2.12.x
+- Akka
+    - Actors 2.5.x
+    - Http 10.1.x
+- Slick 3.3.x
+- Hsqldb database 2.4.x
 
 ## API overview
 
