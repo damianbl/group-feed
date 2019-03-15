@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import com.dblazejewski.application.AggregatorActor.GetUserFeedWithResponseRef
 import com.dblazejewski.application.FeedActor.{GetGroupFeed, GetUserFeed, UserJoinedGroup}
 import com.dblazejewski.application.GroupFeedActor.GetGroupFeedWithResponseRef
 import com.dblazejewski.domain.PostWithAuthor
@@ -65,9 +66,9 @@ class FeedActor(groupRepository: GroupRepository,
 
   def receive: Receive = {
     case UserJoinedGroup(userId, groupId) => handleUserJoinedGroup(userId, groupId)
-    case GetGroupFeed(groupId) =>
-      aggregatorActor ! GetGroupFeedWithResponseRef(groupId, sender())
-    case GetUserFeed(userId) => getUserFeed(userId)
+    case GetGroupFeed(groupId) => aggregatorActor ! GetGroupFeedWithResponseRef(groupId, sender())
+    case GetUserFeed(userId) =>
+      userGroupsMapping.get(userId).foreach(aggregatorActor ! GetUserFeedWithResponseRef(userId, _, sender()))
   }
 
   private def handleUserJoinedGroup(userId: UUID, groupId: UUID): Unit = {
@@ -79,11 +80,5 @@ class FeedActor(groupRepository: GroupRepository,
         log.info(s"New user [$userId] joined group [$groupId]")
         userGroupsMapping = userGroupsMapping + (userId -> (groupId :: Nil))
     }
-  }
-
-  private def getUserFeed(userId: UUID) = {
-    val localSender = sender()
-
-
   }
 }

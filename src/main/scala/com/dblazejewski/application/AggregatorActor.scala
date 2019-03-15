@@ -3,9 +3,10 @@ package com.dblazejewski.application
 import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import com.dblazejewski.application.AggregatorActor.{NewGroupCreated, NewPostAdded}
-import com.dblazejewski.application.FeedActor.GetGroupFeedFailed
-import com.dblazejewski.application.GroupFeedActor.GetGroupFeedWithResponseRef
+import com.dblazejewski.application.AggregatorActor.{GetUserFeedWithResponseRef, NewGroupCreated, NewPostAdded}
+import com.dblazejewski.application.FeedActor.{GetGroupFeedFailed, ReturnUserFeed}
+import com.dblazejewski.application.GroupFeedActor.{GetGroupFeed, GetGroupFeedWithResponseRef}
+import com.dblazejewski.application.UserFeedActor.{CollectUserFeed, CollectedUserFeed}
 import com.dblazejewski.repository.{PostRepository, UserGroupRepository}
 import com.dblazejewski.support.ScalazSupport
 
@@ -16,6 +17,8 @@ object AggregatorActor {
   final case class NewGroupCreated(groupId: UUID)
 
   final case class NewPostAdded(groupId: UUID)
+
+  final case class GetUserFeedWithResponseRef(userId: UUID, groupIds: Seq[UUID], responseRef: ActorRef)
 
   def props(postRepository: PostRepository, userGroupRepository: UserGroupRepository): Props =
     Props(new AggregatorActor(postRepository, userGroupRepository))
@@ -40,6 +43,7 @@ class AggregatorActor(postRepository: PostRepository,
     case NewGroupCreated(groupId) =>
       groupFeedActors = groupFeedActors +
         (groupId -> context.actorOf(GroupFeedActor.props(groupId, postRepository), s"group-actor-$groupId"))
+
     case getGroupFeedWithResponseRef: GetGroupFeedWithResponseRef =>
       groupFeedActors.get(getGroupFeedWithResponseRef.groupId) match {
         case Some(groupFeedActor) => groupFeedActor ! getGroupFeedWithResponseRef
@@ -48,6 +52,15 @@ class AggregatorActor(postRepository: PostRepository,
           log.warning(errorMsg)
           getGroupFeedWithResponseRef.responseRef ! GetGroupFeedFailed(getGroupFeedWithResponseRef.groupId, errorMsg)
       }
+
+    case GetUserFeedWithResponseRef(userId, groupIds, responseRef) =>
+      val id = UUID.randomUUID
+      val userFeedActor = context.actorOf(UserFeedActor.props(), s"user-feed-actor-$id")
+      userFeedActor ! CollectUserFeed(id, userId, groupIds.flatMap(groupFeedActors.get), responseRef)
+
+    case CollectedUserFeed(userId, feed, responseRef) =>
+      responseRef ! ReturnUserFeed(userId, feed)
+
     case newPostAdded: NewPostAdded =>
       log.info(s"New post added to group [${newPostAdded.groupId}]")
       groupFeedActors.get(newPostAdded.groupId).foreach(_ ! newPostAdded)
