@@ -1,14 +1,14 @@
 # Group Feed
 
-# How to start the project
+## How to start the project
 
 `sbt run` 
 - it starts both the server and the file HSQL database
 
 
-# API overview
+## API overview
 
-## Create a group
+### Create a group
 
 **URL** : `http://localhost:8080/api/group`
 
@@ -22,7 +22,7 @@
 }
 ```
 
-## Create a user
+### Create a user
 
 **URL** : `http://localhost:8080/api/user`
 
@@ -36,7 +36,7 @@
 }
 ```
 
-## Become member of a group
+### Become member of a group
 
 **URL** : `http://localhost:8080/api/group/user`
 
@@ -51,13 +51,13 @@
 }
 ```
 
-## Get user groups
+### Get user groups
 
 **URL** : `http://localhost:8080/api/group/user/{user-id}`
 
 **Method** : `GET`
 
-## Add post to a group
+### Add post to a group
 
 **URL** : `http://localhost:8080/api/post/group/`
 
@@ -73,7 +73,7 @@
 }
 ```
 
-## Get group feed
+### Get group feed
 
 **URL** : `http://localhost:8080/api/feed/group/{group-id}`
 
