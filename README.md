@@ -79,7 +79,7 @@
 
 **Method** : `GET`
 
-## Get user all groups feed
+### Get user all groups feed
 
 **URL** : `http://localhost:8080/api/feed/all/{user-id}`
 
