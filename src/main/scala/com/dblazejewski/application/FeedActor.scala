@@ -5,7 +5,7 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.dblazejewski.application.AggregatorActor.GetUserFeedWithResponseRef
-import com.dblazejewski.application.FeedActor.{GetGroupFeed, GetUserFeed, UserJoinedGroup}
+import com.dblazejewski.application.FeedActor.{GetGroupFeed, GetUserFeed, ReturnUserFeed, UserJoinedGroup}
 import com.dblazejewski.application.GroupFeedActor.GetGroupFeedWithResponseRef
 import com.dblazejewski.domain.PostWithAuthor
 import com.dblazejewski.repository.{GroupRepository, PostRepository, UserGroupRepository, UserRepository}
@@ -66,9 +66,16 @@ class FeedActor(groupRepository: GroupRepository,
 
   def receive: Receive = {
     case UserJoinedGroup(userId, groupId) => handleUserJoinedGroup(userId, groupId)
+
     case GetGroupFeed(groupId) => aggregatorActor ! GetGroupFeedWithResponseRef(groupId, sender())
+
     case GetUserFeed(userId) =>
-      userGroupsMapping.get(userId).foreach(aggregatorActor ! GetUserFeedWithResponseRef(userId, _, sender()))
+      userGroupsMapping.get(userId) match {
+        case Some(groups) => aggregatorActor ! GetUserFeedWithResponseRef(userId, groups, sender())
+        case _ =>
+          log.info(s"User [$userId] has not joined any groups yet")
+          sender() ! ReturnUserFeed(userId, Nil)
+      }
   }
 
   private def handleUserJoinedGroup(userId: UUID, groupId: UUID): Unit = {

@@ -34,9 +34,14 @@ class UserFeedActor() extends Actor with ActorLogging with ScalazSupport {
       originalSender = sender()
       originalResponseRef = responseRef
 
-      groupActors.foreach { groupActor =>
-        groupActor ! GetGroupFeed
+      if (groupActors.nonEmpty) {
+        groupActors.foreach { groupActor =>
+          groupActor ! GetGroupFeed
+        }
+      } else {
+//        originalSender ! CollectedUserFeed(originalUserId, Nil, originalResponseRef)
       }
+
 
     case GroupFeedWithUserFeedItem(feed) =>
       responses += feed

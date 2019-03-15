@@ -41,6 +41,7 @@ class AggregatorActor(postRepository: PostRepository,
 
   def receive: Receive = {
     case NewGroupCreated(groupId) =>
+      log.info(s"New group created [$groupId]")
       groupFeedActors = groupFeedActors +
         (groupId -> context.actorOf(GroupFeedActor.props(groupId, postRepository), s"group-actor-$groupId"))
 
