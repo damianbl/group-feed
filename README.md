@@ -15,6 +15,10 @@
 
 ## API overview
 
+### Authorization
+All API endpoints require `Authorization` http header with an access token:
+`Authorization: AccessToken 7ehrXcp6acX9`
+
 ### Create a group
 
 **URL** : `http://localhost:8080/api/group`

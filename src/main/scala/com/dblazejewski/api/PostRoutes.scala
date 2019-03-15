@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.RouteDirectives.complete
 import akka.pattern.ask
 import akka.util.Timeout
+import com.dblazejewski.api.support.AuthorizationSupport
 import com.dblazejewski.application.PostActor.{PostStored, StorePost, StorePostFailed}
 import com.dblazejewski.support.JsonSupport
 import com.typesafe.scalalogging.StrictLogging
@@ -20,6 +21,7 @@ final case class PostBody(authorId: UUID, groupId: UUID, content: String)
 final case class PostStoredResponse(id: UUID)
 
 trait PostRoutes extends JsonSupport
+  with AuthorizationSupport
   with StrictLogging {
 
   implicit def system: ActorSystem
@@ -29,15 +31,19 @@ trait PostRoutes extends JsonSupport
   private implicit lazy val timeout: Timeout = Timeout(5 seconds)
 
   lazy val postRoutes: Route =
-    pathPrefix("post") {
-      post {
-        entity(as[PostBody]) { postBody =>
-          onSuccess(postActor ? StorePost(postBody.authorId, postBody.groupId, postBody.content)) {
-            case PostStored(postId, _, _) =>
-              complete(StatusCodes.OK, PostStoredResponse(postId))
-            case error: StorePostFailed =>
-              logger.error(s"Error adding post by user [${error.userId}] to group [${error.groupId}]", error.msg)
-              complete(StatusCodes.InternalServerError, error)
+    extractCredentials { credentials =>
+      authorizeAsync(_ => hasValidToken(tokenAuthenticator(credentials))) {
+        pathPrefix("post") {
+          post {
+            entity(as[PostBody]) { postBody =>
+              onSuccess(postActor ? StorePost(postBody.authorId, postBody.groupId, postBody.content)) {
+                case PostStored(postId, _, _) =>
+                  complete(StatusCodes.OK, PostStoredResponse(postId))
+                case error: StorePostFailed =>
+                  logger.error(s"Error adding post by user [${error.userId}] to group [${error.groupId}]", error.msg)
+                  complete(StatusCodes.InternalServerError, error)
+              }
+            }
           }
         }
       }
