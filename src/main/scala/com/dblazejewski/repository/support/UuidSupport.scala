@@ -5,13 +5,10 @@ import java.util.UUID
 
 trait UuidSupport {
   implicit def fromByteArray(byteArray: Array[Byte]): UUID = {
-    val bb: ByteBuffer = ByteBuffer.wrap(byteArray)
+    val bb = ByteBuffer.wrap(byteArray)
     new UUID(bb.getLong, bb.getLong)
   }
 
-  implicit def toByteArray(id: UUID): Array[Byte] = {
-    val bb: ByteBuffer = ByteBuffer.allocate(16)
-    bb.putLong(id.getMostSignificantBits).putLong(id.getLeastSignificantBits)
-    bb.array
-  }
+  implicit def toByteArray(id: UUID): Array[Byte] =
+    ByteBuffer.allocate(16).putLong(id.getMostSignificantBits).putLong(id.getLeastSignificantBits).array
 }

@@ -2,7 +2,7 @@ package com.dblazejewski.api.support
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.{ Directive, ExceptionHandler, RejectionHandler }
+import akka.http.scaladsl.server.{Directive, ExceptionHandler, RejectionHandler}
 import com.typesafe.scalalogging.StrictLogging
 
 trait RoutesRequestWrapper extends StrictLogging {
@@ -15,9 +15,9 @@ trait RoutesRequestWrapper extends StrictLogging {
   private val rejectionHandler = RejectionHandler.default
 
   private val logDuration = extractRequestContext.flatMap { ctx =>
-    val start = System.currentTimeMillis()
+    val start = System.currentTimeMillis
     mapResponse { resp =>
-      val d = System.currentTimeMillis() - start
+      val d = System.currentTimeMillis - start
       logger.info(s"[${resp.status.intValue()}] ${ctx.request.method.name} ${ctx.request.uri} took: ${d}ms")
       resp
     } & handleRejections(rejectionHandler)

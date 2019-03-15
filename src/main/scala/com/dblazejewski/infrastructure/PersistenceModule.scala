@@ -1,9 +1,9 @@
 package com.dblazejewski.infrastructure
 
-import com.dblazejewski.repository.{ GroupRepository, PostRepository, UserGroupRepository, UserRepository }
-import slick.backend.DatabaseConfig
+import com.dblazejewski.repository.{GroupRepository, PostRepository, UserGroupRepository, UserRepository}
+import slick.basic.DatabaseConfig
 import slick.dbio.DBIO
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Future
 
@@ -31,7 +31,7 @@ trait PersistenceModuleImpl extends PersistenceModule with DbModule {
 
   private val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("hsqldb")
 
-  override implicit val profile: JdbcProfile = dbConfig.driver
+  override implicit val profile: JdbcProfile = dbConfig.profile
   override implicit val db: JdbcProfile#Backend#Database = dbConfig.db
 
   private val sqlDatabase = SqlDatabase(db, profile)

@@ -42,7 +42,6 @@ class UserFeedActor() extends Actor with ActorLogging with ScalazSupport {
         originalSender ! CollectedUserFeed(originalUserId, Nil, originalResponseRef)
       }
 
-
     case GroupFeedWithUserFeedItem(feed) =>
       responses += feed
       if (responses.size == nrOfChildJobs) {

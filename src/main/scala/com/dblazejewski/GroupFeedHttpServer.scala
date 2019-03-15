@@ -64,23 +64,17 @@ object GroupFeedHttpServer extends App
 
   import modules.profile.api._
 
-  createSchema
+  val schema = modules.userRepository.users.schema ++
+    modules.groupRepository.groups.schema ++
+    modules.postRepository.posts.schema ++
+    modules.userGroupRepository.userGroups.schema
 
-  def createSchema = {
-    val schema = modules.userRepository.users.schema ++
-      modules.groupRepository.groups.schema ++
-      modules.postRepository.posts.schema ++
-      modules.userGroupRepository.userGroups.schema
-
-    modules.db.run(DBIO.seq(schema.createIfNotExists))
-      .map { _ =>
-        logger.info("Database schema created")
-      }
-      .recover {
-        case t: Throwable =>
-          logger.error("Database schema creation failed", t)
-      }
-  }
+  modules.db.run(DBIO.seq(schema.createIfNotExists))
+    .map { _ => logger.info("Database schema created if not existed") }
+    .recover {
+      case t: Throwable =>
+        logger.error("Database schema creation failed", t)
+    }
 
   serverBinding.onComplete {
     case Success(bound) =>

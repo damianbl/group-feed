@@ -1,9 +1,5 @@
 package com.dblazejewski.infrastructure
 
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 
-case class SqlDatabase(db: JdbcProfile#Backend#Database, driver: JdbcProfile) {
-  def close() {
-    db.close()
-  }
-}
+case class SqlDatabase(db: JdbcProfile#Backend#Database, driver: JdbcProfile)

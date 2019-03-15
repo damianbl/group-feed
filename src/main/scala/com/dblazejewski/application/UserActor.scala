@@ -35,6 +35,7 @@ class UserActor(userRepository: UserRepository) extends Actor with ActorLogging 
         .map(id => localSender ! UserAdded(id))
         .recover {
           case t: Throwable =>
+            log.error(s"Adding user [$name] failed", t)
             localSender ! UserAddFailed(name)
         }
   }
