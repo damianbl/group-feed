@@ -6,7 +6,7 @@
 - it starts both the server and the file HSQL database
 
 
-#API overview
+# API overview
 
 ### Create group
 
