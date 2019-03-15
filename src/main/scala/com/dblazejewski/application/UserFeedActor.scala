@@ -39,7 +39,7 @@ class UserFeedActor() extends Actor with ActorLogging with ScalazSupport {
           groupActor ! GetGroupFeed
         }
       } else {
-//        originalSender ! CollectedUserFeed(originalUserId, Nil, originalResponseRef)
+        originalSender ! CollectedUserFeed(originalUserId, Nil, originalResponseRef)
       }
 
 
