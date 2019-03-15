@@ -56,7 +56,6 @@ class FeedActor(groupRepository: GroupRepository,
   private val userGroupsMapping = Map.empty[UUID, Seq[UUID]]
 
   override def preStart(): Unit = {
-    log.info("preStart")
     userGroupRepository.findAll().map { userGroupsSeq =>
       context.become(onMessage(userGroupsSeq
         .groupBy(_.userId)

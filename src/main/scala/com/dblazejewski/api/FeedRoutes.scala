@@ -12,6 +12,7 @@ import akka.util.Timeout
 import com.dblazejewski.api.support.AuthorizationSupport
 import com.dblazejewski.application.FeedActor._
 import com.dblazejewski.domain.PostWithAuthor
+import com.dblazejewski.infrastructure.ConfigurationModuleImpl
 import com.dblazejewski.support.JsonSupport
 import com.typesafe.scalalogging.StrictLogging
 import com.dblazejewski.support.UuidSupport._

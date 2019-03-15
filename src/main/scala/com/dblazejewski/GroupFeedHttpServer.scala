@@ -17,7 +17,13 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object GroupFeedHttpServer extends App
-  with RoutesRequestWrapper with GroupRoutes with UserRoutes with PostRoutes with FeedRoutes with StrictLogging {
+  with RoutesRequestWrapper
+  with GroupRoutes
+  with UserRoutes
+  with PostRoutes
+  with FeedRoutes
+  with StrictLogging {
+
   val conf = ConfigFactory.load("reference.conf")
 
   val modules = new ConfigurationModuleImpl with PersistenceModuleImpl
