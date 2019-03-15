@@ -5,7 +5,7 @@ import java.util.UUID
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.dblazejewski.application.AggregatorActor.{GetUserFeedWithResponseRef, NewGroupCreated, NewPostAdded}
 import com.dblazejewski.application.FeedActor.{GetGroupFeedFailed, ReturnUserFeed}
-import com.dblazejewski.application.GroupFeedActor.{GetGroupFeed, GetGroupFeedWithResponseRef}
+import com.dblazejewski.application.GroupFeedActor.GetGroupFeedWithResponseRef
 import com.dblazejewski.application.UserFeedActor.{CollectUserFeed, CollectedUserFeed}
 import com.dblazejewski.repository.{PostRepository, UserGroupRepository}
 import com.dblazejewski.support.ScalazSupport
@@ -27,23 +27,25 @@ object AggregatorActor {
 class AggregatorActor(postRepository: PostRepository,
                       userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
 
-  private var groupFeedActors = Map.empty[UUID, ActorRef]
+  private val groupFeedActors = Map.empty[UUID, ActorRef]
 
   override def preStart(): Unit = {
     userGroupRepository.findAllGroupIds().map { ids =>
       ids.foreach { id =>
-        groupFeedActors = groupFeedActors +
-          (id -> context.actorOf(GroupFeedActor.props(id, postRepository), s"group-actor-$id"))
+        context.become(onMessage(groupFeedActors +
+          (id -> context.actorOf(GroupFeedActor.props(id, postRepository), s"group-actor-$id"))))
       }
       super.preStart()
     }
   }
 
-  def receive: Receive = {
+  def receive: Receive = onMessage(groupFeedActors)
+
+  private def onMessage(groupFeedActors: Map[UUID, ActorRef]): Receive = {
     case NewGroupCreated(groupId) =>
       log.info(s"New group created [$groupId]")
-      groupFeedActors = groupFeedActors +
-        (groupId -> context.actorOf(GroupFeedActor.props(groupId, postRepository), s"group-actor-$groupId"))
+      context.become(onMessage(groupFeedActors +
+        (groupId -> context.actorOf(GroupFeedActor.props(groupId, postRepository), s"group-actor-$groupId"))))
 
     case getGroupFeedWithResponseRef: GetGroupFeedWithResponseRef =>
       groupFeedActors.get(getGroupFeedWithResponseRef.groupId) match {

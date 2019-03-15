@@ -5,8 +5,10 @@ import java.util.UUID
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import com.dblazejewski.application.AggregatorActor.NewPostAdded
 import com.dblazejewski.application.FeedActor.{ReturnGroupFeed, UserFeedItem}
-import com.dblazejewski.application.GroupFeedActor.{GetGroupFeed, GetGroupFeedWithResponseRef,
-  GroupFeedWithUserFeedItem}
+import com.dblazejewski.application.GroupFeedActor.{
+  GetGroupFeed, GetGroupFeedWithResponseRef,
+  GroupFeedWithUserFeedItem
+}
 import com.dblazejewski.domain.PostWithAuthor
 import com.dblazejewski.repository.PostRepository
 import com.dblazejewski.support.ScalazSupport
@@ -30,16 +32,18 @@ object GroupFeedActor {
 class GroupFeedActor(groupId: UUID,
                      postRepository: PostRepository) extends Actor with ActorLogging with ScalazSupport {
 
-  private var groupFeed = Seq.empty[PostWithAuthor]
+  private val groupFeed = Seq.empty[PostWithAuthor]
 
   override def preStart(): Unit = {
     postRepository.findPostsWithAuthorByGroup(groupId).map { posts =>
-      groupFeed = posts
+      context.become(onMessage(posts))
       super.preStart()
     }
   }
 
-  override def receive: Receive = {
+  override def receive: Receive = onMessage(groupFeed)
+
+  private def onMessage(groupFeed: Seq[PostWithAuthor]): Receive = {
     case GetGroupFeedWithResponseRef(id, responseRef) => responseRef ! ReturnGroupFeed(id, groupFeed)
 
     case GetGroupFeed(id) => sender() ! ReturnGroupFeed(id, groupFeed)
@@ -48,6 +52,7 @@ class GroupFeedActor(groupId: UUID,
       sender() ! GroupFeedWithUserFeedItem(
         groupFeed.map(el => UserFeedItem(el.id, el.createdAt, el.content, el.authorId, el.authorName, groupId)))
 
-    case NewPostAdded(groupId) => postRepository.findPostsWithAuthorByGroup(groupId).map(groupFeed = _)
+    case NewPostAdded(group_id) =>
+      postRepository.findPostsWithAuthorByGroup(group_id).map(feed => context.become(onMessage(feed)))
   }
 }

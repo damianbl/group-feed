@@ -51,20 +51,33 @@ class FeedActor(groupRepository: GroupRepository,
                 userGroupRepository: UserGroupRepository,
                 aggregatorActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
 
-  private var userGroupsMapping = Map.empty[UUID, Seq[UUID]]
+  private val userGroupsMapping = Map.empty[UUID, Seq[UUID]]
 
   override def preStart(): Unit = {
     log.info("preStart")
     userGroupRepository.findAll().map { userGroupsSeq =>
-      userGroupsMapping = userGroupsSeq
+      context.become(onMessage(userGroupsSeq
         .groupBy(_.userId)
-        .map { case (userId, userGroups) => (userId, userGroups.map(_.groupId)) }
+        .map { case (userId, userGroups) => (userId, userGroups.map(_.groupId)) }))
 
       super.preStart()
     }
   }
 
-  def receive: Receive = {
+  def receive: Receive = onMessage(userGroupsMapping)
+
+  private def handleUserJoinedGroup(userId: UUID, groupId: UUID): Unit = {
+    userGroupsMapping.get(userId) match {
+      case Some(groups) =>
+        log.info(s"Existing user [$userId] joined group [$groupId]")
+        context.become(onMessage(userGroupsMapping + (userId -> (groups :+ groupId))))
+      case _ =>
+        log.info(s"New user [$userId] joined group [$groupId]")
+        context.become(onMessage(userGroupsMapping + (userId -> (groupId :: Nil))))
+    }
+  }
+
+  private def onMessage(userGroupsMapping: Map[UUID, Seq[UUID]]): Receive = {
     case UserJoinedGroup(userId, groupId) => handleUserJoinedGroup(userId, groupId)
 
     case GetGroupFeed(groupId) => aggregatorActor ! GetGroupFeedWithResponseRef(groupId, sender())
@@ -76,16 +89,5 @@ class FeedActor(groupRepository: GroupRepository,
           log.info(s"User [$userId] has not joined any groups yet")
           sender() ! ReturnUserFeed(userId, Nil)
       }
-  }
-
-  private def handleUserJoinedGroup(userId: UUID, groupId: UUID): Unit = {
-    userGroupsMapping.get(userId) match {
-      case Some(groups) =>
-        log.info(s"Existing user [$userId] joined group [$groupId]")
-        userGroupsMapping = userGroupsMapping + (userId -> (groups :+ groupId))
-      case _ =>
-        log.info(s"New user [$userId] joined group [$groupId]")
-        userGroupsMapping = userGroupsMapping + (userId -> (groupId :: Nil))
-    }
   }
 }
