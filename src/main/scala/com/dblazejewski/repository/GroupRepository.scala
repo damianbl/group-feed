@@ -19,10 +19,6 @@ class GroupRepository(override val database: SqlDatabase) extends RepositorySupp
     (groups returning groups.map(_.id) into ((group, id) => group.copy(id = id)) += group).map(_.id)
   )
 
-  def findByName(name: String): Future[Option[Group]] = runInDb(
-    groups.filter(_.name.toLowerCase === name.toLowerCase).result.headOption
-  )
-
   def findById(id: UUID): Future[Option[Group]] = runInDb(
     groups.filter(_.id === toByteArray(id)).result.headOption
   )
@@ -38,7 +34,7 @@ trait GroupSchema extends UuidSupport {
   class GroupTable(tag: slick.lifted.Tag) extends Table[Group](tag, "GROUP") {
     def id: Rep[Array[Byte]] = column[Array[Byte]]("id", O.PrimaryKey)
 
-    def name: Rep[String] = column[String]("name", O.Unique)
+    def name: Rep[String] = column[String]("name")
 
     def * : ProvenShape[Group] =
       (id, name) <> (tuple => Group.apply(tuple._1, tuple._2), (g: Group) => Some((g.id, g.name)))
