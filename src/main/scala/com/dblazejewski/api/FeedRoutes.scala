@@ -20,7 +20,8 @@ final case class GroupFeedResponse(groupId: UUID, feed: Seq[PostWithAuthor])
 
 final case class UserFeedResponse(userId: UUID, feed: Seq[UserFeedItem])
 
-trait FeedRoutes extends JsonSupport with StrictLogging {
+trait FeedRoutes extends JsonSupport
+  with StrictLogging {
 
   implicit def system: ActorSystem
 

@@ -25,7 +25,9 @@ object AggregatorActor {
 }
 
 class AggregatorActor(postRepository: PostRepository,
-                      userGroupRepository: UserGroupRepository) extends Actor with ActorLogging with ScalazSupport {
+                      userGroupRepository: UserGroupRepository) extends Actor
+  with ActorLogging
+  with ScalazSupport {
 
   private val groupFeedActors = Map.empty[UUID, ActorRef]
 

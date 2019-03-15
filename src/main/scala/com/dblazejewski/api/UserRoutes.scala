@@ -21,7 +21,8 @@ final case class UserNameNotAdded(name: String, msg: String)
 
 final case class AddUserBody(name: String)
 
-trait UserRoutes extends JsonSupport with StrictLogging {
+trait UserRoutes extends JsonSupport
+  with StrictLogging {
 
   implicit def system: ActorSystem
 

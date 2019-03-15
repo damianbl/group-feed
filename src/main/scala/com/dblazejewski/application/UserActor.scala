@@ -20,7 +20,8 @@ object UserActor {
   def props(userRepository: UserRepository): Props = Props(new UserActor(userRepository))
 }
 
-class UserActor(userRepository: UserRepository) extends Actor with ActorLogging {
+class UserActor(userRepository: UserRepository) extends Actor
+  with ActorLogging {
 
   import UserActor._
 

@@ -7,6 +7,7 @@ val logbackClassicVersion = "1.2.3"
 val scalaLoggingVersion = "3.9.2"
 val scalazVersion = "7.2.27"
 val scalaTestVersion = "3.0.5"
+val scalaMockVersion = "4.1.0"
 
 lazy val root = (project in file(".")).
   settings(
@@ -38,6 +39,7 @@ lazy val root = (project in file(".")).
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
       "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
       "com.typesafe.akka" %% "akka-stream-testkit" % akkaVersion % Test,
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
+      "org.scalamock" %% "scalamock" % scalaMockVersion % Test
     )
   )

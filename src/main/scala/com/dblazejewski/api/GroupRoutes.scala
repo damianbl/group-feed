@@ -25,7 +25,8 @@ final case class AddGroupBody(name: String)
 
 final case class GroupIdsResponse(ids: Seq[UUID])
 
-trait GroupRoutes extends JsonSupport with StrictLogging {
+trait GroupRoutes extends JsonSupport
+  with StrictLogging {
 
   implicit def system: ActorSystem
 

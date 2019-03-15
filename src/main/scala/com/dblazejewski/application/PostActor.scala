@@ -34,7 +34,9 @@ class PostActor(groupRepository: GroupRepository,
                 userRepository: UserRepository,
                 postRepository: PostRepository,
                 userGroupRepository: UserGroupRepository,
-                aggregatorActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
+                aggregatorActor: ActorRef) extends Actor
+  with ActorLogging
+  with ScalazSupport {
 
   def receive: Receive = {
     case StorePost(authorId, groupId, content) => storePost(authorId, groupId, content)

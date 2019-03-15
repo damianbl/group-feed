@@ -30,7 +30,9 @@ object GroupFeedActor {
 }
 
 class GroupFeedActor(groupId: UUID,
-                     postRepository: PostRepository) extends Actor with ActorLogging with ScalazSupport {
+                     postRepository: PostRepository) extends Actor
+  with ActorLogging
+  with ScalazSupport {
 
   private val groupFeed = Seq.empty[PostWithAuthor]
 

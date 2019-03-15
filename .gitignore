@@ -1,5 +1,4 @@
 *.class
 .idea
 target/
-src/test/
 data/

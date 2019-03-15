@@ -49,7 +49,9 @@ class FeedActor(groupRepository: GroupRepository,
                 userRepository: UserRepository,
                 postRepository: PostRepository,
                 userGroupRepository: UserGroupRepository,
-                aggregatorActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
+                aggregatorActor: ActorRef) extends Actor
+  with ActorLogging
+  with ScalazSupport {
 
   private val userGroupsMapping = Map.empty[UUID, Seq[UUID]]
 

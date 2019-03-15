@@ -18,7 +18,10 @@ object UserFeedActor {
   def props(): Props = Props(new UserFeedActor())
 }
 
-class UserFeedActor() extends Actor with ActorLogging with ScalazSupport {
+class UserFeedActor() extends Actor
+  with ActorLogging
+  with ScalazSupport {
+
   private var jobId: UUID = _
   private var responses = Set.empty[Seq[UserFeedItem]]
   private var nrOfChildJobs: Long = _

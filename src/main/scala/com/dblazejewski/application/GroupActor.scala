@@ -47,7 +47,9 @@ class GroupActor(groupRepository: GroupRepository,
                  userRepository: UserRepository,
                  userGroupRepository: UserGroupRepository,
                  feedActor: ActorRef,
-                 aggregatorActor: ActorRef) extends Actor with ActorLogging with ScalazSupport {
+                 aggregatorActor: ActorRef) extends Actor
+  with ActorLogging
+  with ScalazSupport {
 
   import GroupActor._
 

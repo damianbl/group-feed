@@ -11,7 +11,9 @@ import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class PostRepository(override val database: SqlDatabase) extends PostSchema with UserSchema with RepositorySupport {
+class PostRepository(override val database: SqlDatabase) extends RepositorySupport
+  with UserSchema
+  with PostSchema {
 
   import database.driver.api._
 

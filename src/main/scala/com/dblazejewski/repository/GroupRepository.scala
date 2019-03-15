@@ -10,7 +10,8 @@ import slick.lifted.{ProvenShape, TableQuery}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class GroupRepository(override val database: SqlDatabase) extends GroupSchema with RepositorySupport {
+class GroupRepository(override val database: SqlDatabase) extends RepositorySupport
+  with GroupSchema {
 
   import database.driver.api._
 

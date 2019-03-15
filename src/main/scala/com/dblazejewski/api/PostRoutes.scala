@@ -19,7 +19,8 @@ final case class PostBody(authorId: UUID, groupId: UUID, content: String)
 
 final case class PostStoredResponse(id: UUID)
 
-trait PostRoutes extends JsonSupport with StrictLogging {
+trait PostRoutes extends JsonSupport
+  with StrictLogging {
 
   implicit def system: ActorSystem
 

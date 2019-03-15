@@ -10,7 +10,8 @@ import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class UserGroupRepository(override val database: SqlDatabase) extends UserGroupSchema with RepositorySupport {
+class UserGroupRepository(override val database: SqlDatabase) extends RepositorySupport
+  with UserGroupSchema {
 
   import database.driver.api._
 

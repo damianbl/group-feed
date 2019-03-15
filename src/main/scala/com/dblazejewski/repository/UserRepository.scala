@@ -10,7 +10,8 @@ import slick.lifted.{ProvenShape, TableQuery}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class UserRepository(protected val database: SqlDatabase) extends UserSchema with RepositorySupport {
+class UserRepository(protected val database: SqlDatabase) extends RepositorySupport
+  with UserSchema {
 
   import database.driver.api._
 

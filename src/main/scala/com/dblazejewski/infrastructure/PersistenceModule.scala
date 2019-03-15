@@ -26,7 +26,9 @@ trait PersistenceModule {
   val userGroupRepository: UserGroupRepository
 }
 
-trait PersistenceModuleImpl extends PersistenceModule with DbModule {
+trait PersistenceModuleImpl extends PersistenceModule
+  with DbModule {
+
   this: Configuration =>
 
   private val dbConfig: DatabaseConfig[JdbcProfile] = DatabaseConfig.forConfig("hsqldb")
